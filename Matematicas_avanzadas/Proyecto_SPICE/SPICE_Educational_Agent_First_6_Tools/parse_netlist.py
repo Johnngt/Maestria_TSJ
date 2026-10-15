@@ -38,7 +38,14 @@ PREFIXES = {
     "p": 1e-12,
     "f": 1e-15,
 }
-UNITS = {"R": "ohm", "C": "farad", "L": "henry", "V": "volt", "I": "ampere"}
+UNITS = {
+    "R": "ohm",
+    "G": "siemens",
+    "C": "farad",
+    "L": "henry",
+    "V": "volt",
+    "I": "ampere",
+}
 
 
 class NetlistParseError(ValueError):
@@ -118,7 +125,7 @@ def parse_component(tokens: list[str], line_number: int, source_line: str) -> di
     designator = tokens[0][0].upper()
     if designator not in UNITS:
         raise NetlistParseError(
-            f"Line {line_number}: unsupported element {tokens[0]!r}; supported: R, C, L, V, I"
+            f"Line {line_number}: unsupported element {tokens[0]!r}; supported: R, G, C, L, V, I"
         )
     if designator in {"V", "I"}:
         return _parse_source(tokens, line_number, source_line)

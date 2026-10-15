@@ -46,17 +46,44 @@ def phasor(magnitude: float, phase_deg: float | None) -> complex:
 
 def branch_admittance(element_type: str, value: float, frequency_hz: float | None) -> complex:
     if element_type == "R":
+        if value <= 0:
+            raise NodalCompatibilityError("Resistance must be positive")
         return 1.0 / value
+    if element_type == "G":
+        if value < 0:
+            raise NodalCompatibilityError("Conductance cannot be negative")
+        return value
     if element_type == "C":
+        if value <= 0:
+            raise NodalCompatibilityError("Capacitance must be positive")
         if frequency_hz is None:
             # DC steady state: capacitor is open.
             return 0.0 + 0.0j
         return 1j * 2.0 * math.pi * frequency_hz * value
     if element_type == "L":
+        if value <= 0:
+            raise NodalCompatibilityError("Inductance must be positive")
         if frequency_hz is None or frequency_hz == 0:
             raise NodalCompatibilityError("Ideal inductor at DC requires a dedicated DC/MNA treatment")
         return 1.0 / (1j * 2.0 * math.pi * frequency_hz * value)
     raise NodalCompatibilityError(f"Element type {element_type} is not an admittance branch")
+
+
+def current_source_value(branch: Any, frequency_hz: float | None) -> complex:
+    source_kind = (branch.source_kind or "DC").upper()
+    if frequency_hz is None:
+        return complex(branch.value_si) if source_kind == "DC" else 0.0 + 0.0j
+    if source_kind != "AC":
+        return 0.0 + 0.0j
+    magnitude = branch.ac_magnitude
+    if magnitude is None:
+        magnitude = branch.value_si
+    phase_deg = branch.ac_phase_deg or 0.0
+    if not math.isfinite(float(magnitude)) or not math.isfinite(float(phase_deg)):
+        raise NodalCompatibilityError(
+            f"{branch.component_name}: AC magnitude and phase must be finite"
+        )
+    return phasor(float(magnitude), float(phase_deg))
 
 
 def build_nodal_system(
@@ -65,28 +92,32 @@ def build_nodal_system(
     frequency_hz: float | None = None,
 ) -> dict[str, Any]:
     """Build M*Vn=b using A*Y*A.T and orientation-consistent current injections."""
+    if frequency_hz is not None and (not math.isfinite(frequency_hz) or frequency_hz < 0):
+        raise NodalCompatibilityError("Frequency must be finite and non-negative")
     a = np.array(incidence_data["A_reduced"], dtype=float)
     branch_order = incidence_data["branch_order"]
     if branch_order != [b.id for b in circuit.branches]:
         raise NodalCompatibilityError("Incidence branch order does not match circuit branch order")
     b_count = len(circuit.branches)
+    if a.ndim != 2 or a.shape[1] != b_count:
+        raise NodalCompatibilityError("Reduced incidence matrix has incorrect dimensions")
     y_diag = np.zeros(b_count, dtype=complex)
     current_branch = np.zeros(b_count, dtype=complex)
     unsupported: list[str] = []
 
     for branch in circuit.branches:
-        if branch.element_type in {"R", "C", "L"}:
-            y_diag[branch.index] = branch_admittance(branch.element_type, branch.value_si, frequency_hz)
-        elif branch.element_type == "I":
-            if frequency_hz is None:
-                current_branch[branch.index] = branch.value_si if branch.source_kind == "DC" else 0.0
-            else:
-                current_branch[branch.index] = (
-                    phasor(branch.ac_magnitude or 0.0, branch.ac_phase_deg)
-                    if branch.source_kind == "AC"
-                    else branch.value_si
-                )
-        elif branch.element_type == "V":
+        if branch.index < 0 or branch.index >= b_count:
+            raise NodalCompatibilityError(
+                f"{branch.component_name}: branch index {branch.index} is out of range"
+            )
+        element_type = branch.element_type.upper()
+        if element_type in {"R", "G", "C", "L"}:
+            y_diag[branch.index] = branch_admittance(
+                element_type, branch.value_si, frequency_hz
+            )
+        elif element_type == "I":
+            current_branch[branch.index] = current_source_value(branch, frequency_hz)
+        elif element_type == "V":
             unsupported.append(f"{branch.component_name}: ideal voltage source")
         else:
             unsupported.append(f"{branch.component_name}: type {branch.element_type}")

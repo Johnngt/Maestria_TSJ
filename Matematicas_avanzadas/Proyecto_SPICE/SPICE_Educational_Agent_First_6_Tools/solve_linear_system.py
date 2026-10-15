@@ -55,6 +55,76 @@ def vector_records(labels: list[str], values: np.ndarray, unit: str) -> list[dic
     ]
 
 
+def solve_matrix_system(
+    system: dict[str, Any],
+    atol: float = 1e-10,
+    rtol: float = 1e-8,
+) -> dict[str, Any]:
+    """Solve a serialized generic linear system, including Tableau systems."""
+    matrix_data = system.get("M", system.get("T"))
+    rhs_data = system.get("rhs", system.get("Wp"))
+    if matrix_data is None or rhs_data is None:
+        raise LinearSystemError("System must contain matrix M/T and vector rhs/Wp")
+    matrix = json_to_complex_matrix(matrix_data)
+    rhs = json_to_complex_vector(rhs_data)
+    if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
+        raise LinearSystemError("Linear-system matrix must be square")
+    if rhs.shape != (matrix.shape[0],):
+        raise LinearSystemError("Linear-system vector has incompatible dimensions")
+    if not np.all(np.isfinite(matrix)) or not np.all(np.isfinite(rhs)):
+        raise LinearSystemError("Linear system contains NaN or Inf")
+
+    rank = int(np.linalg.matrix_rank(matrix))
+    condition = float(np.linalg.cond(matrix))
+    if rank < matrix.shape[0] or not np.isfinite(condition):
+        raise LinearSystemError(
+            f"Singular linear system: rank={rank}, size={matrix.shape[0]}, condition={condition}"
+        )
+    try:
+        values = np.linalg.solve(matrix, rhs)
+    except np.linalg.LinAlgError as exc:
+        raise LinearSystemError(f"NumPy could not solve the system: {exc}") from exc
+
+    residual = matrix @ values - rhs
+    residual_norm = float(np.linalg.norm(residual))
+    scale = float(np.linalg.norm(matrix) * np.linalg.norm(values) + np.linalg.norm(rhs))
+    normalized_residual = residual_norm / scale if scale else residual_norm
+    if not np.allclose(matrix @ values, rhs, atol=atol, rtol=rtol):
+        raise LinearSystemError(f"Solution failed validation: residual={residual_norm:.3e}")
+
+    labels = system.get("unknown_order", [f"x[{index}]" for index in range(len(values))])
+    if len(labels) != len(values):
+        raise LinearSystemError("Unknown labels do not match system dimension")
+    records = []
+    for label, value in zip(labels, values):
+        unit = "volt" if label.startswith("V(") else "ampere" if label.startswith("I(") else "unknown"
+        records.extend(vector_records([label], np.asarray([value]), unit))
+
+    raw: dict[str, Any] = {"X": [complex_to_json(value) for value in values]}
+    blocks = system.get("unknown_blocks", {})
+    for block_name in ("Vb", "I", "Vn"):
+        bounds = blocks.get(block_name)
+        if bounds is not None and len(bounds) == 2:
+            raw[block_name] = [complex_to_json(value) for value in values[bounds[0]:bounds[1]]]
+
+    return {
+        "schema_version": "1.0",
+        "source_name": system.get("source_name", "<unknown>"),
+        "analysis": system.get("analysis"),
+        "frequency_hz": system.get("frequency_hz"),
+        "formulation": system.get("formulation", "LINEAR"),
+        "status": "PASS",
+        "rank": rank,
+        "condition_number": condition,
+        "residual_norm": residual_norm,
+        "normalized_residual": normalized_residual,
+        "atol": atol,
+        "rtol": rtol,
+        "unknowns": records,
+        "raw": raw,
+    }
+
+
 def solve_nodal_system(
     system: dict[str, Any],
     circuit: Circuit,
@@ -66,6 +136,15 @@ def solve_nodal_system(
     a = np.array(system["A_reduced"], dtype=float)
     y = json_to_complex_matrix(system["Y_branch"])
     j_branch = json_to_complex_vector(system["J_branch"])
+    expected_branch_order = [branch.id for branch in circuit.branches]
+    if system.get("branch_order") != expected_branch_order:
+        raise LinearSystemError("Circuit branch order does not match nodal-system branch order")
+    if a.ndim != 2 or a.shape[1] != len(expected_branch_order):
+        raise LinearSystemError("Reduced incidence matrix has incorrect dimensions")
+    if y.shape != (len(expected_branch_order), len(expected_branch_order)):
+        raise LinearSystemError("Branch admittance matrix has incorrect dimensions")
+    if j_branch.shape != (len(expected_branch_order),):
+        raise LinearSystemError("Current-source vector has incorrect dimensions")
     if m.shape[0] != m.shape[1] or rhs.shape != (m.shape[0],):
         raise LinearSystemError("Malformed linear-system dimensions")
     rank = int(np.linalg.matrix_rank(m))
@@ -125,14 +204,19 @@ def solve_nodal_system(
 def main() -> None:
     parser = argparse.ArgumentParser(description="Solve and validate a nodal linear system")
     parser.add_argument("system_json")
-    parser.add_argument("circuit_json")
+    parser.add_argument("circuit_json", nargs="?", help="Required for nodal current recovery")
     parser.add_argument("-o", "--output", required=True)
     parser.add_argument("--atol", type=float, default=1e-10)
     parser.add_argument("--rtol", type=float, default=1e-8)
     args = parser.parse_args()
     system = json.loads(Path(args.system_json).read_text(encoding="utf-8"))
-    circuit = load_circuit(args.circuit_json)
-    result = solve_nodal_system(system, circuit, args.atol, args.rtol)
+    if system.get("formulation") == "TABLEAU" or "unknown_blocks" in system:
+        result = solve_matrix_system(system, args.atol, args.rtol)
+    else:
+        if not args.circuit_json:
+            parser.error("circuit_json is required for nodal systems")
+        circuit = load_circuit(args.circuit_json)
+        result = solve_nodal_system(system, circuit, args.atol, args.rtol)
     Path(args.output).write_text(json.dumps(result, indent=2), encoding="utf-8")
     print(f"Solved {result['analysis']} system: PASS -> {args.output}")
     for item in result["node_voltages"]:
