@@ -13,7 +13,6 @@ Author: Dr. Francisco E. Rangel-Patiño
 from __future__ import annotations
 
 import argparse
-import cmath
 import json
 import math
 from pathlib import Path
@@ -22,6 +21,7 @@ from typing import Any
 import numpy as np
 
 from build_circuit_model import Circuit, load_circuit
+from stamp_elements import StampError, nodal_stamp
 
 
 class NodalCompatibilityError(ValueError):
@@ -41,49 +41,41 @@ def complex_vector_to_json(vector: np.ndarray) -> list[dict[str, float]]:
 
 
 def phasor(magnitude: float, phase_deg: float | None) -> complex:
+    import cmath
+
     return cmath.rect(magnitude, math.radians(phase_deg or 0.0))
 
 
 def branch_admittance(element_type: str, value: float, frequency_hz: float | None) -> complex:
-    if element_type == "R":
-        if value <= 0:
-            raise NodalCompatibilityError("Resistance must be positive")
-        return 1.0 / value
-    if element_type == "G":
-        if value < 0:
-            raise NodalCompatibilityError("Conductance cannot be negative")
-        return value
-    if element_type == "C":
-        if value <= 0:
-            raise NodalCompatibilityError("Capacitance must be positive")
-        if frequency_hz is None:
-            # DC steady state: capacitor is open.
-            return 0.0 + 0.0j
-        return 1j * 2.0 * math.pi * frequency_hz * value
-    if element_type == "L":
-        if value <= 0:
-            raise NodalCompatibilityError("Inductance must be positive")
-        if frequency_hz is None or frequency_hz == 0:
-            raise NodalCompatibilityError("Ideal inductor at DC requires a dedicated DC/MNA treatment")
-        return 1.0 / (1j * 2.0 * math.pi * frequency_hz * value)
-    raise NodalCompatibilityError(f"Element type {element_type} is not an admittance branch")
+    from types import SimpleNamespace
+
+    branch = SimpleNamespace(
+        component_name=element_type,
+        element_type=element_type,
+        value_si=value,
+        source_kind=None,
+        ac_magnitude=None,
+        ac_phase_deg=None,
+    )
+    try:
+        result = nodal_stamp(branch, frequency_hz)
+    except StampError as error:
+        raise NodalCompatibilityError(str(error)) from error
+    if result.admittance is None:
+        raise NodalCompatibilityError(f"{element_type} does not have a passive admittance")
+    return result.admittance
 
 
 def current_source_value(branch: Any, frequency_hz: float | None) -> complex:
-    source_kind = (branch.source_kind or "DC").upper()
-    if frequency_hz is None:
-        return complex(branch.value_si) if source_kind == "DC" else 0.0 + 0.0j
-    if source_kind != "AC":
-        return 0.0 + 0.0j
-    magnitude = branch.ac_magnitude
-    if magnitude is None:
-        magnitude = branch.value_si
-    phase_deg = branch.ac_phase_deg or 0.0
-    if not math.isfinite(float(magnitude)) or not math.isfinite(float(phase_deg)):
+    try:
+        result = nodal_stamp(branch, frequency_hz)
+    except StampError as error:
+        raise NodalCompatibilityError(str(error)) from error
+    if result.current is None:
         raise NodalCompatibilityError(
-            f"{branch.component_name}: AC magnitude and phase must be finite"
+            f"{branch.component_name}: not an independent current source"
         )
-    return phasor(float(magnitude), float(phase_deg))
+    return result.current
 
 
 def build_nodal_system(
@@ -112,9 +104,15 @@ def build_nodal_system(
             )
         element_type = branch.element_type.upper()
         if element_type in {"R", "G", "C", "L"}:
-            y_diag[branch.index] = branch_admittance(
-                element_type, branch.value_si, frequency_hz
-            )
+            try:
+                result = nodal_stamp(branch, frequency_hz)
+            except StampError as error:
+                raise NodalCompatibilityError(str(error)) from error
+            if result.admittance is None:
+                raise NodalCompatibilityError(
+                    f"{branch.component_name}: passive branch has no nodal admittance"
+                )
+            y_diag[branch.index] = result.admittance
         elif element_type == "I":
             current_branch[branch.index] = current_source_value(branch, frequency_hz)
         elif element_type == "V":

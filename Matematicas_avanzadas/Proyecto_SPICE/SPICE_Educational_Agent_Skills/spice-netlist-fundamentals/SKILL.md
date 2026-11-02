@@ -18,7 +18,7 @@ Usar al recibir un netlist, una línea SPICE, una solicitud de listar componente
 
 Soportar inicialmente:
 - `R`: resistor.
-- `G`: conductancia explícita del proyecto, sólo si la gramática del curso la habilita.
+- `G`: conductancia explícita del proyecto; se aceptan valores no negativos.
 - `C`: capacitor.
 - `L`: inductor.
 - `I`: fuente independiente de corriente DC o AC.
@@ -52,8 +52,8 @@ V<id> <n+> <n-> AC <magnitude> [phase_deg]
 4. Identificar tipo por el primer carácter del nombre.
 5. Validar número de tokens por variante.
 6. Normalizar nodos y valores mediante `engineering-units-and-conventions`.
-7. Detectar identificadores duplicados.
-8. Detectar ausencia del nodo `0`.
+7. Detectar identificadores duplicados, ramas con terminales idénticas y parámetros AC no finitos.
+8. Detectar ausencia del nodo `0` y directivas `.AC` duplicadas.
 9. Crear objetos estructurados; no construir matrices todavía.
 10. Emitir errores con número de línea, token y corrección sugerida.
 
@@ -67,7 +67,7 @@ Si una línea usa un elemento no soportado, detener el análisis y reportarlo. N
 
 ## Tools relacionadas
 
-`parse_netlist.py`, `validate_netlist.py`, `engineering_values.py`, `build_circuit_model.py`.
+`validate_netlist.py` recopila diagnósticos estructurados antes del modelado; `parse_netlist.py` también ejecuta esta validación para no permitir que datos inválidos avancen. Se relaciona con `engineering_values.py` y `build_circuit_model.py`.
 
 ## Validaciones
 

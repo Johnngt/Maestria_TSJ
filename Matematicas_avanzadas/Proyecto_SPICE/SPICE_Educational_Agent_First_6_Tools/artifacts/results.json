@@ -1,0 +1,148 @@
+{
+  "schema_version": "1.0",
+  "source_name": "current_source_resistive.cir",
+  "analysis": "DC",
+  "frequency_hz": null,
+  "status": "PASS",
+  "rank": 2,
+  "condition_number": 2.0,
+  "residual_norm": 0.0,
+  "normalized_residual": 0.0,
+  "kcl_norm": 0.0,
+  "atol": 1e-10,
+  "rtol": 1e-08,
+  "node_voltages": [
+    {
+      "label": "V(N1)",
+      "real": 0.75,
+      "imag": 0.0,
+      "magnitude": 0.75,
+      "phase_deg": 0.0,
+      "unit": "volt"
+    },
+    {
+      "label": "V(N2)",
+      "real": 0.25,
+      "imag": 0.0,
+      "magnitude": 0.25,
+      "phase_deg": 0.0,
+      "unit": "volt"
+    }
+  ],
+  "branch_voltages": [
+    {
+      "label": "B1 (I1)",
+      "real": -0.75,
+      "imag": 0.0,
+      "magnitude": 0.75,
+      "phase_deg": 180.0,
+      "unit": "volt"
+    },
+    {
+      "label": "B2 (R1)",
+      "real": 0.75,
+      "imag": 0.0,
+      "magnitude": 0.75,
+      "phase_deg": 0.0,
+      "unit": "volt"
+    },
+    {
+      "label": "B3 (R2)",
+      "real": 0.5,
+      "imag": 0.0,
+      "magnitude": 0.5,
+      "phase_deg": 0.0,
+      "unit": "volt"
+    },
+    {
+      "label": "B4 (R3)",
+      "real": 0.25,
+      "imag": 0.0,
+      "magnitude": 0.25,
+      "phase_deg": 0.0,
+      "unit": "volt"
+    }
+  ],
+  "branch_currents": [
+    {
+      "label": "B1 (I1)",
+      "real": 0.001,
+      "imag": 0.0,
+      "magnitude": 0.001,
+      "phase_deg": 0.0,
+      "unit": "ampere"
+    },
+    {
+      "label": "B2 (R1)",
+      "real": 0.00075,
+      "imag": 0.0,
+      "magnitude": 0.00075,
+      "phase_deg": 0.0,
+      "unit": "ampere"
+    },
+    {
+      "label": "B3 (R2)",
+      "real": 0.00025,
+      "imag": 0.0,
+      "magnitude": 0.00025,
+      "phase_deg": 0.0,
+      "unit": "ampere"
+    },
+    {
+      "label": "B4 (R3)",
+      "real": 0.00025,
+      "imag": 0.0,
+      "magnitude": 0.00025,
+      "phase_deg": 0.0,
+      "unit": "ampere"
+    }
+  ],
+  "raw": {
+    "Vn": [
+      {
+        "real": 0.75,
+        "imag": 0.0
+      },
+      {
+        "real": 0.25,
+        "imag": 0.0
+      }
+    ],
+    "Vb": [
+      {
+        "real": -0.75,
+        "imag": 0.0
+      },
+      {
+        "real": 0.75,
+        "imag": 0.0
+      },
+      {
+        "real": 0.5,
+        "imag": 0.0
+      },
+      {
+        "real": 0.25,
+        "imag": 0.0
+      }
+    ],
+    "I": [
+      {
+        "real": 0.001,
+        "imag": 0.0
+      },
+      {
+        "real": 0.00075,
+        "imag": 0.0
+      },
+      {
+        "real": 0.00025,
+        "imag": 0.0
+      },
+      {
+        "real": 0.00025,
+        "imag": 0.0
+      }
+    ]
+  }
+}

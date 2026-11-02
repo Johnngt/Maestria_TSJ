@@ -1,0 +1,48 @@
+{
+  "schema_version": "1.0",
+  "source_name": "rc_ac.cir",
+  "reference_node": "0",
+  "nodes": [
+    {
+      "id": "0",
+      "is_reference": true
+    },
+    {
+      "id": "1",
+      "is_reference": false
+    }
+  ],
+  "edges": [
+    {
+      "node_from": "0",
+      "node_to": "1",
+      "key": "B1",
+      "branch_id": "B1",
+      "component": "I1",
+      "element_type": "I",
+      "value_si": 0.001,
+      "unit": "ampere"
+    },
+    {
+      "node_from": "1",
+      "node_to": "0",
+      "key": "B2",
+      "branch_id": "B2",
+      "component": "R1",
+      "element_type": "R",
+      "value_si": 1000.0,
+      "unit": "ohm"
+    },
+    {
+      "node_from": "1",
+      "node_to": "0",
+      "key": "B3",
+      "branch_id": "B3",
+      "component": "C1",
+      "element_type": "C",
+      "value_si": 1e-06,
+      "unit": "farad"
+    }
+  ],
+  "is_connected": true
+}

@@ -135,8 +135,10 @@ def parse_component(tokens: list[str], line_number: int, source_line: str) -> di
         )
     name, n_plus, n_minus, value_token = tokens
     value = parse_engineering_value(value_token)
-    if value <= 0:
+    if value <= 0 and designator != "G":
         raise NetlistParseError(f"Line {line_number}: passive component value must be positive")
+    if designator == "G" and value < 0:
+        raise NetlistParseError(f"Line {line_number}: conductance cannot be negative")
     return {
         "name": name,
         "type": designator,
@@ -182,6 +184,21 @@ def parse_directive(tokens: list[str], line_number: int, source_line: str) -> di
 
 def parse_netlist_text(text: str, source_name: str = "<memory>") -> dict[str, Any]:
     """Parse netlist text into a JSON-serializable intermediate representation."""
+    from validate_netlist import validate_netlist_text
+
+    validation = validate_netlist_text(text, source_name)
+    if validation["status"] == "FAIL":
+        errors = [
+            item for item in validation["diagnostics"] if item["severity"] == "error"
+        ]
+        summary = "; ".join(
+            f"Line {item['line_number']}: {item['message']}"
+            if "line_number" in item
+            else item["message"]
+            for item in errors
+        )
+        raise NetlistParseError(f"Netlist validation failed: {summary}")
+
     elements: list[dict[str, Any]] = []
     directives: list[dict[str, Any]] = []
     warnings: list[str] = []

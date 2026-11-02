@@ -7,11 +7,11 @@ Author: Dr. Francisco E. Rangel-Patiño
 The methodological guide lists the main tools in this order:
 
 1. `parse_netlist.py`
-2. `validate_netlist.py` (planned)
+2. `validate_netlist.py`
 3. `build_circuit_model.py`
 4. `build_oriented_graph.py`
 5. `build_incidence_matrix.py`
-6. `stamp_elements.py` (its branch models are currently implemented in `build_constitutive_matrices.py`)
+6. `stamp_elements.py`
 7. `build_constitutive_matrices.py`
 8. `build_nodal_system.py`
 9. `build_tableau_system.py`
@@ -22,7 +22,7 @@ The methodological guide lists the main tools in this order:
 14. `generate_report.py`
 15. `plot_results.py`
 
-Scripts 1-5 and 8, 10 existed in the original package. Scripts 7, 9, and 11-15 are implemented in this package. Scripts marked as planned are not implemented yet.
+The netlist validator and shared component-stamp module are implemented. The stamp module is used by both nodal assembly and constitutive matrix generation to keep their component models consistent.
 
 ## Dependencies
 
@@ -35,6 +35,7 @@ python -m pip install numpy networkx matplotlib
 Run these commands from the package directory:
 
 ```bash
+python validate_netlist.py examples/current_source_resistive.cir -o artifacts/validation_netlist.json
 python parse_netlist.py examples/current_source_resistive.cir -o artifacts/parsed.json
 python build_circuit_model.py artifacts/parsed.json -o artifacts/circuit.json
 python build_oriented_graph.py artifacts/circuit.json -o artifacts/topology.json --image artifacts/graph.png
@@ -42,6 +43,10 @@ python build_incidence_matrix.py artifacts/circuit.json -o artifacts/incidence.j
 python build_nodal_system.py artifacts/circuit.json artifacts/incidence.json -o artifacts/nodal.json
 python solve_linear_system.py artifacts/nodal.json artifacts/circuit.json -o artifacts/results.json
 ```
+
+`parse_netlist.py` also invokes the validator before producing parsed data. The standalone validation report uses `PASS`/`FAIL` plus structured diagnostics (code, severity, line, and suggested action); the CLI exits non-zero on `FAIL`.
+
+The shared `stamp_elements.py` module defines the Tableau constitutive stamps and the nodal admittance/current-source stamps. Zero conductance is valid and produces a zero stamp; negative conductance is rejected.
 
 For Tableau, build the constitutive matrices, assemble the Tableau system, and solve without a circuit argument:
 

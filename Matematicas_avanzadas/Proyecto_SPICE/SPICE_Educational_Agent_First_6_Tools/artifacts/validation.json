@@ -1,0 +1,48 @@
+{
+  "schema_version": "1.0",
+  "source_name": "current_source_resistive.cir",
+  "analysis": "DC",
+  "frequency_hz": null,
+  "status": "PASS",
+  "checks": [
+    {
+      "name": "linear_residual",
+      "norm": 0.0,
+      "scale": 0.002767766952966369,
+      "threshold": 1.2767766952966369e-10,
+      "passed": true
+    },
+    {
+      "name": "full_rank",
+      "rank": 2,
+      "size": 2,
+      "passed": true
+    },
+    {
+      "name": "KCL",
+      "norm": 0.0,
+      "scale": 0.0029047375096555627,
+      "threshold": 1.2904737509655563e-10,
+      "passed": true
+    },
+    {
+      "name": "branch_node_voltage",
+      "norm": 0.0,
+      "scale": 2.3979157616563596,
+      "threshold": 2.4079157616563598e-08,
+      "passed": true
+    },
+    {
+      "name": "branch_admittance",
+      "norm": 0.0,
+      "scale": 0.003128194303265508,
+      "threshold": 1.3128194303265508e-10,
+      "passed": true
+    }
+  ],
+  "diagnostics": [],
+  "condition_number": 2.0,
+  "atol": 1e-10,
+  "rtol": 1e-08,
+  "condition_limit": 1000000000000.0
+}

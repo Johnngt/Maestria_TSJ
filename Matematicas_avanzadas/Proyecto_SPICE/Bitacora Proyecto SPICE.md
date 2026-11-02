@@ -106,6 +106,20 @@ Se creó `plot_results.py` para producir PNG de topología y, cuando hay funcion
 
 Se añadió `test_extended_tools.py` con siete pruebas y se actualizó el README del paquete con scripts implementados, comandos de ejecución y pruebas. La ausencia del script separado `stamp_elements.py` quedó documentada: los modelos de rama están integrados actualmente en `build_constitutive_matrices.py`.
 
+### 10. Generación de reporte explicable y gráficas tipo Bode (2026-11-02)
+
+Se ejecutó la etapa de documentación y visualización del flujo AC del ejemplo RC para cerrar la evidencia metodológica del proyecto.
+
+Resultados principales:
+
+- Se generó un bundle de artefactos con el circuito, la topología, la incidencia, el sistema AC, la solución, la validación y la comparación.
+- Se creó un reporte Markdown explicable con los elementos del flujo: netlist, componentes, nodos, topología, matriz de incidencia, sistema ensamblado, resultados AC, validación, comparación de referencia y advertencias.
+- Se generaron las gráficas tipo Bode del circuito RC en la carpeta `artifacts/bode`: `magnitude.png` y `phase.png`, además del grafo de topología `graph.png`.
+- El análisis del caso RC quedó en estado `PASS` y la transferencia `H(jω)` se documentó con magnitud en dB y fase en grados durante el barrido logarítmico.
+- El reporte final quedó almacenado en `artifacts/rc_ac_report.md` y se usó como evidencia de trazabilidad del agente y del flujo numérico.
+
+Esta etapa confirmó que el agente no solo resuelve el sistema, sino que además documenta y comunica el proceso en una forma reproducible y adecuada para la enseñanza.
+
 ## Archivos de código y documentación
 
 ### Nuevos archivos
@@ -154,3 +168,50 @@ Hubo dos intentos iniciales fallidos por motivos de entorno o expectativa del te
 ## Estado de Git observado
 
 Al cierre, el repositorio estaba en la rama `main`, sincronizada con `origin/main`. Los cuatro archivos existentes enumerados arriba aparecían modificados; los nuevos scripts y pruebas aparecían sin seguimiento. El PDF, el Markdown de la guía, el resumen introductorio y `__pycache__/` ya aparecían como no versionados en el estado previo a los cambios de implementación y se dejaron intactos salvo la creación documentada de los Markdown indicados.
+
+## Registro de jornada — 2026-11-02
+
+### Trabajo realizado
+
+Se continuó la validación del Custom Agent y del flujo de simulación AC con el ejemplo `rc_ac.cir`. Primero se ejecutaron las pruebas del paquete; el entorno de terminal no tenía `networkx`, por lo que se instalaron las dependencias en el sitio de usuario y se volvió a ejecutar la suite satisfactoriamente.
+
+Se produjo evidencia de uso del flujo:
+
+- Se generó un reporte Markdown explicable del circuito RC en `artifacts/rc_ac_report.md` y su bundle reproducible en `artifacts/rc_ac_report_bundle.json`.
+- El reporte documenta el netlist, los componentes normalizados, nodos, topología, incidencia, sistema ensamblado, barrido AC, validaciones, comparación y advertencias.
+- Se generaron las gráficas de topología, magnitud y fase en `artifacts/bode/graph.png`, `artifacts/bode/magnitude.png` y `artifacts/bode/phase.png`.
+- El barrido AC DEC cubrió 41 frecuencias de 10 Hz a 100 kHz. La primera frecuencia reportó una ganancia de 59.9829 dB y fase de -3.5953 grados.
+
+Se revisó la existencia y el funcionamiento de los 15 scripts principales enumerados en la sección 3.1 de la guía metodológica. Los 13 scripts presentes respondieron correctamente a `-h`; se confirmó que `validate_netlist.py` y `stamp_elements.py` no existían todavía. La prueba de integración DC reprodujo $V(N1)=0.75\,V$ y $V(N2)=0.25\,V$, y las siete pruebas extendidas pasaron.
+
+El análisis específico de los dos faltantes identificó que el parser detectaba algunos errores léxicos y de componentes, pero no reunía diagnósticos de circuito; además, aceptaba tierra ausente hasta la construcción del modelo, múltiples `.AC`, ramas con terminales idénticas y fase AC no finita. También se observó que las ecuaciones constitutivas Tableau y las admitancias nodales estaban codificadas en rutas distintas, con discrepancia sobre si `G=0` era válido.
+
+Para cerrar esas brechas:
+
+1. Se añadió `validate_netlist.py`, con diagnósticos estructurados que incluyen severidad, código, mensaje, número de línea cuando aplica y sugerencia de corrección. La validación detecta errores en más de una línea, ausencia de referencia, nombres duplicados, terminales idénticas, parámetros AC inválidos y directivas `.AC` duplicadas. La CLI devuelve un código de error ante resultado `FAIL`.
+2. Se integró la validación como puerta previa en `parse_netlist.py`, de modo que entradas inválidas no continúen al modelado. La regla de conductancia se hizo consistente: cero es aceptado y valores negativos son rechazados.
+3. Se añadió `stamp_elements.py` con funciones compartidas para los modelos constitutivos $YV_b+ZI=W$ y las contribuciones nodales. `build_constitutive_matrices.py` y `build_nodal_system.py` reutilizan esa biblioteca, incluidos los modelos de fuentes, R, G, C y L.
+4. Se ampliaron las regresiones para cubrir diagnósticos múltiples, bloqueo de netlists inválidos, conductancia cero, consistencia entre stamps nodales y constitutivos y límites de representación nodal.
+5. Se actualizaron el README del paquete y los skills de fundamentos de netlist y modelos constitutivos para documentar el validador, el módulo de stamps y sus reglas.
+
+### Verificación de esta jornada
+
+- Pruebas extendidas: **10/10 PASS**.
+- Integración DC: **PASS**, con los voltajes analíticos esperados.
+- Barrido AC RC: **PASS**, con 41 puntos y función de transferencia calculada.
+- Validación CLI seguida de parseo, construcción de circuito, matrices constitutivas, incidencia y ensamble nodal: **PASS**.
+- Compilación sintáctica de los módulos nuevos y modificados: **PASS**.
+- `git diff --check`: **PASS**; se observaron únicamente avisos de conversión de fin de línea LF/CRLF en Windows.
+
+### Nuevos aprendizajes adquiridos
+
+- El parser y el validador cumplen responsabilidades distintas: el parser transforma sintaxis válida a una representación estructurada; el validador reúne y explica problemas antes de permitir que el flujo avance.
+- La validación de un netlist debe abarcar tanto tokens por línea como invariantes de circuito y coherencia de directivas, además de conservar referencias a la línea fuente.
+- Una biblioteca única de stamps evita que el análisis nodal y Tableau implementen convenciones eléctricas divergentes; las pruebas pueden verificar que sus ecuaciones produzcan contribuciones equivalentes.
+- La conductancia nula es matemáticamente válida como rama abierta de admitancia cero, mientras que la conductancia negativa queda fuera del modelo pasivo adoptado.
+- La formulación nodal clásica no puede representar directamente todos los casos límite de una rama ideal, como un inductor ideal en DC; esos casos requieren una formulación que conserve la corriente de rama, como Tableau o MNA.
+- Las herramientas CLI pueden tener contratos distintos para argumentos complejos: `solve_ac_sweep.py --transfers` recibe la ruta de un archivo JSON, no el objeto JSON inline. Para reproducibilidad conviene documentar y probar el contrato exacto.
+
+## Estado al cierre de la jornada
+
+Los dos faltantes revisados en la sección 3.1 ya cuentan con implementación: validador de netlist dedicado y módulo independiente de stamps compartidos. Las pruebas confirman la integración en el flujo actual. No se realizó commit.

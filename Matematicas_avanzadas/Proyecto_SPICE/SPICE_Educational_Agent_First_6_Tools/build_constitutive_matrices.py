@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import cmath
 import json
 import math
 from pathlib import Path
@@ -12,6 +11,7 @@ from typing import Any
 import numpy as np
 
 from build_circuit_model import Circuit, load_circuit
+from stamp_elements import StampError, constitutive_stamp
 
 
 class ConstitutiveModelError(ValueError):
@@ -31,62 +31,23 @@ def complex_vector_to_json(vector: np.ndarray) -> list[dict[str, float]]:
 
 
 def source_value(branch: Any, frequency_hz: float | None) -> complex:
-    source_kind = (branch.source_kind or "DC").upper()
-    if frequency_hz is None:
-        if source_kind == "AC":
-            return 0.0 + 0.0j
-        return complex(branch.value_si)
-    if source_kind != "AC":
-        return 0.0 + 0.0j
-    magnitude = branch.ac_magnitude
-    if magnitude is None:
-        magnitude = branch.value_si
-    phase_deg = branch.ac_phase_deg or 0.0
-    if not math.isfinite(float(magnitude)) or not math.isfinite(float(phase_deg)):
+    stamp = constitutive_stamp(branch, frequency_hz)
+    if branch.element_type.upper() not in {"V", "I"}:
         raise ConstitutiveModelError(
-            f"{branch.component_name}: AC magnitude and phase must be finite"
+            f"{branch.component_name}: source value requested for a non-source branch"
         )
-    return cmath.rect(float(magnitude), math.radians(float(phase_deg)))
+    return stamp.w
 
 
 def branch_model(
     branch: Any, frequency_hz: float | None
 ) -> tuple[complex, complex, complex, str]:
     """Return coefficients for Y*Vb + Z*I = W and its source equation."""
-    element_type = branch.element_type.upper()
-    value = float(branch.value_si)
-    if not math.isfinite(value):
-        raise ConstitutiveModelError(f"{branch.component_name}: value must be finite")
-
-    if element_type == "R":
-        if value <= 0:
-            raise ConstitutiveModelError(f"{branch.component_name}: resistance must be positive")
-        return 1.0 + 0.0j, -value + 0.0j, 0.0 + 0.0j, "V - R*I = 0"
-    if element_type == "G":
-        if value < 0:
-            raise ConstitutiveModelError(f"{branch.component_name}: conductance cannot be negative")
-        return value + 0.0j, -1.0 + 0.0j, 0.0 + 0.0j, "G*V - I = 0"
-    if element_type == "C":
-        if value <= 0:
-            raise ConstitutiveModelError(f"{branch.component_name}: capacitance must be positive")
-        if frequency_hz is None:
-            return 0.0 + 0.0j, 1.0 + 0.0j, 0.0 + 0.0j, "I = 0 (DC steady state)"
-        s = 1j * 2.0 * math.pi * frequency_hz
-        return s * value, -1.0 + 0.0j, 0.0 + 0.0j, "s*C*V - I = 0"
-    if element_type == "L":
-        if value <= 0:
-            raise ConstitutiveModelError(f"{branch.component_name}: inductance must be positive")
-        if frequency_hz is None:
-            return 1.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j, "V = 0 (DC steady state)"
-        s = 1j * 2.0 * math.pi * frequency_hz
-        return 1.0 + 0.0j, -s * value, 0.0 + 0.0j, "V - s*L*I = 0"
-    if element_type == "V":
-        return 1.0 + 0.0j, 0.0 + 0.0j, source_value(branch, frequency_hz), "V = E"
-    if element_type == "I":
-        return 0.0 + 0.0j, 1.0 + 0.0j, source_value(branch, frequency_hz), "I = J"
-    raise ConstitutiveModelError(
-        f"{branch.component_name}: unsupported element type {branch.element_type!r}"
-    )
+    try:
+        stamp = constitutive_stamp(branch, frequency_hz)
+    except StampError as error:
+        raise ConstitutiveModelError(str(error)) from error
+    return stamp.y, stamp.z, stamp.w, stamp.equation
 
 
 def build_constitutive_matrices(

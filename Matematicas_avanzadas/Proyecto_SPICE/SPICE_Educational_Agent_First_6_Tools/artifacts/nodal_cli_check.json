@@ -1,0 +1,164 @@
+{
+  "schema_version": "1.0",
+  "source_name": "current_source_resistive.cir",
+  "analysis": "DC",
+  "frequency_hz": null,
+  "node_order": [
+    "1",
+    "2"
+  ],
+  "branch_order": [
+    "B1",
+    "B2",
+    "B3",
+    "B4"
+  ],
+  "component_order": [
+    "I1",
+    "R1",
+    "R2",
+    "R3"
+  ],
+  "A_reduced": [
+    [
+      -1,
+      1,
+      1,
+      0
+    ],
+    [
+      0,
+      0,
+      -1,
+      1
+    ]
+  ],
+  "Y_branch": [
+    [
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      }
+    ],
+    [
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.001,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      }
+    ],
+    [
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0005,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      }
+    ],
+    [
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.001,
+        "imag": 0.0
+      }
+    ]
+  ],
+  "J_branch": [
+    {
+      "real": 0.001,
+      "imag": 0.0
+    },
+    {
+      "real": 0.0,
+      "imag": 0.0
+    },
+    {
+      "real": 0.0,
+      "imag": 0.0
+    },
+    {
+      "real": 0.0,
+      "imag": 0.0
+    }
+  ],
+  "M": [
+    [
+      {
+        "real": 0.0015,
+        "imag": 0.0
+      },
+      {
+        "real": -0.0005,
+        "imag": 0.0
+      }
+    ],
+    [
+      {
+        "real": -0.0005,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0015,
+        "imag": 0.0
+      }
+    ]
+  ],
+  "rhs": [
+    {
+      "real": 0.001,
+      "imag": -0.0
+    },
+    {
+      "real": -0.0,
+      "imag": -0.0
+    }
+  ],
+  "shape": [
+    2,
+    2
+  ]
+}

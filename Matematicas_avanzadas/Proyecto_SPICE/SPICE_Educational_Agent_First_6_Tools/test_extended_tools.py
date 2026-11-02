@@ -19,7 +19,9 @@ from parse_netlist import parse_netlist_text
 from plot_results import plot_results
 from solve_ac_sweep import generate_frequencies, solve_ac_sweep
 from solve_linear_system import LinearSystemError, solve_matrix_system, solve_nodal_system
+from stamp_elements import StampError, constitutive_stamp, nodal_stamp
 from validate_solution import validate_solution
+from validate_netlist import validate_netlist_text
 
 
 def make_circuit(text: str, source_name: str = "<test>"):
@@ -28,6 +30,70 @@ def make_circuit(text: str, source_name: str = "<test>"):
 
 
 class ExtendedToolsTests(unittest.TestCase):
+    def test_netlist_validation_collects_circuit_diagnostics(self) -> None:
+        report = validate_netlist_text(
+            "\n".join(
+                [
+                    "R1 1 2 1k",
+                    "R1 2 3 2k",
+                    "I1 3 4 AC 1m nan",
+                    ".AC LIN 3 1 10",
+                    ".AC DEC 10 1 100",
+                    ".END",
+                ]
+            ),
+            "invalid.cir",
+        )
+        self.assertEqual(report["status"], "FAIL")
+        codes = {item["code"] for item in report["diagnostics"]}
+        self.assertTrue(
+            {
+                "DUPLICATE_COMPONENT",
+                "INVALID_AC_PHASE",
+                "MISSING_REFERENCE_NODE",
+                "MULTIPLE_AC_DIRECTIVES",
+            }.issubset(codes)
+        )
+
+        valid = validate_netlist_text("R1 1 0 1k", "valid.cir")
+        self.assertEqual(valid["status"], "PASS")
+        self.assertEqual(valid["diagnostics"][0]["code"], "MISSING_END_DIRECTIVE")
+
+    def test_netlist_parser_enforces_validation_and_allows_zero_conductance(self) -> None:
+        with self.assertRaisesRegex(ValueError, "Netlist validation failed"):
+            parse_netlist_text("R1 1 2 1k\n.END", "missing-ground.cir")
+        circuit, _ = make_circuit("G1 1 0 0\nR1 1 0 1k\n.END")
+        self.assertEqual(circuit.branches[0].value_si, 0)
+        self.assertEqual(nodal_stamp(circuit.branches[0]).admittance, 0j)
+
+    def test_shared_component_stamps_agree_between_tableau_and_nodal(self) -> None:
+        circuit, _ = make_circuit(
+            "\n".join(
+                [
+                    "R1 1 0 1k",
+                    "G1 1 0 1m",
+                    "C1 1 0 1u",
+                    "L1 1 0 1m",
+                    "I1 0 1 AC 2m 90",
+                    ".END",
+                ]
+            )
+        )
+        frequency = 1000.0
+        for branch in circuit.branches[:4]:
+            constitutive = constitutive_stamp(branch, frequency)
+            nodal = nodal_stamp(branch, frequency)
+            self.assertAlmostEqual(
+                nodal.admittance,
+                -constitutive.y / constitutive.z,
+            )
+        source = nodal_stamp(circuit.branches[4], frequency)
+        source_model = constitutive_stamp(circuit.branches[4], frequency)
+        self.assertIsNone(source.admittance)
+        self.assertAlmostEqual(source.current, source_model.w / source_model.z)
+        with self.assertRaises(StampError):
+            nodal_stamp(circuit.branches[3])
+
     def test_constitutive_models_cover_dc_and_ac_sources(self) -> None:
         text = "\n".join(
             [

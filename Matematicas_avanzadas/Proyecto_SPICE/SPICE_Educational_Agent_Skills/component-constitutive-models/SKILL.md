@@ -55,6 +55,8 @@ Fuentes controladas y op-amps ideales requieren modelos de bloque y ramas especi
 
 `stamp_elements.py`, `build_constitutive_matrices.py`, `build_nodal_system.py`, `build_tableau_system.py`.
 
+`stamp_elements.py` es la fuente compartida de stamps constitutivos y nodales; los ensambladores nodal y Tableau deben reutilizarla en lugar de definir modelos de componentes por separado. La conductancia `G` admite cero y rechaza valores negativos.
+
 ## Validaciones
 
 Unidades, dimensiones, signos, dependencia con `s`, consistencia entre modelo y modo, y correspondencia con la rama.
