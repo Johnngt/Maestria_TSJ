@@ -1,3 +1,6 @@
+import ast
+import re
+
 import numpy as np
 
 
@@ -10,25 +13,95 @@ def leer_entero(mensaje):
             print("Entrada inválida. Debes ingresar un número entero.")
 
 
+def parsear_matriz(entrada, filas, columnas):
+    """Recibe la matriz como filas separadas por espacios o en formato de lista."""
+    texto = entrada.strip()
+    if not texto:
+        raise ValueError("La entrada está vacía.")
+
+    if "[" in texto:
+        texto_limpio = texto.replace(";", ",")
+        texto_limpio = re.sub(r"\]\s*\[", "], [", texto_limpio)
+        texto_limpio = re.sub(r"(?<=\d)\s+(?=[-+\d.])", ",", texto_limpio)
+        texto_limpio = re.sub(r"\s+", "", texto_limpio)
+
+        try:
+            datos = ast.literal_eval(texto_limpio)
+        except (SyntaxError, ValueError):
+            raise ValueError("El formato de la matriz no es válido.")
+
+        if isinstance(datos, (int, float)):
+            datos = [datos]
+
+        if not isinstance(datos, (list, tuple)) or not datos:
+            raise ValueError("La matriz debe contener al menos un valor.")
+
+        if isinstance(datos[0], (int, float)):
+            matriz = [list(datos)]
+        else:
+            matriz = [list(fila) for fila in datos]
+
+    else:
+        filas_texto = [fila.strip() for fila in re.split(r"[\n;]+", texto) if fila.strip()]
+        if not filas_texto:
+            raise ValueError("No se detectaron filas válidas.")
+
+        matriz = []
+        for fila in filas_texto:
+            valores = [valor for valor in re.split(r"[\s,]+", fila) if valor]
+            if not valores:
+                continue
+            try:
+                matriz.append([float(valor) for valor in valores])
+            except ValueError as exc:
+                raise ValueError("Solo se permiten números reales.") from exc
+
+    if len(matriz) != filas:
+        raise ValueError(f"Se esperaban {filas} filas, pero se recibieron {len(matriz)}.")
+
+    for fila in matriz:
+        if len(fila) != columnas:
+            raise ValueError(f"Cada fila debe tener exactamente {columnas} valores.")
+
+    return matriz
+
+
 def leer_matriz(nombre, filas, columnas):
     matriz = []
     print(f"\nIngrese la matriz {nombre} ({filas}x{columnas})")
+    print("Formatos aceptados:")
+    print("  - Filas separadas por espacios: 1 2 3")
+    print("  - Matriz completa: [[1, 2, 3], [4, 5, 6]]")
+    print("  - También acepta: [[1 2 3] [4 5 6]]")
 
-    for i in range(filas):
-        while True:
-            entrada = input(f"Fila {i + 1} ({columnas} valores separados por espacio): ").strip()
-            valores = entrada.split()
+    while True:
+        entrada = input(
+            f"Ingrese los valores de {nombre} (o presione Enter para fila por fila): "
+        ).strip()
 
-            if len(valores) != columnas:
-                print(f"Debes ingresar exactamente {columnas} valores en la fila {i + 1}.")
-                continue
+        if entrada == "":
+            for i in range(filas):
+                while True:
+                    fila_input = input(f"Fila {i + 1} ({columnas} valores separados por espacio): ").strip()
+                    valores = fila_input.split()
 
-            try:
-                fila = [float(valor) for valor in valores]
-                matriz.append(fila)
-                break
-            except ValueError:
-                print("Solo se permiten números reales.")
+                    if len(valores) != columnas:
+                        print(f"Debes ingresar exactamente {columnas} valores en la fila {i + 1}.")
+                        continue
+
+                    try:
+                        fila = [float(valor) for valor in valores]
+                        matriz.append(fila)
+                        break
+                    except ValueError:
+                        print("Solo se permiten números reales.")
+            break
+
+        try:
+            matriz = parsear_matriz(entrada, filas, columnas)
+            break
+        except ValueError as exc:
+            print(f"{exc} Intenta nuevamente.")
 
     return np.array(matriz, dtype=float)
 
