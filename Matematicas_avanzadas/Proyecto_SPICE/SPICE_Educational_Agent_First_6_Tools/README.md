@@ -22,7 +22,7 @@ The methodological guide lists the main tools in this order:
 14. `generate_report.py`
 15. `plot_results.py`
 
-The netlist validator and shared component-stamp module are implemented. The stamp module is used by both nodal assembly and constitutive matrix generation to keep their component models consistent.
+The netlist validator and shared component-stamp module are implemented. The stamp module is used by both nodal assembly and constitutive matrix generation to keep their component models consistent. `build_mna_system.py` adds the project-specific ideal-op-amp extension with an auxiliary output-current unknown; this is a linear ideal model without rails or saturation, not portable SPICE syntax.
 
 ## Dependencies
 
@@ -46,6 +46,8 @@ python solve_linear_system.py artifacts/nodal.json artifacts/circuit.json -o art
 
 `parse_netlist.py` also invokes the validator before producing parsed data. The standalone validation report uses `PASS`/`FAIL` plus structured diagnostics (code, severity, line, and suggested action); the CLI exits non-zero on `FAIL`.
 
+The project-only ideal-op-amp directive is `.OPAMP U1 NP NM OUT IDEAL`, where the terminals are non-inverting input, inverting input, and output. For circuits containing it, use MNA; nodal and Tableau assembly reject the directive rather than silently omit the device. Ideal op-amps have zero input current, `V(NP)=V(NM)` in the assumed linear operating region, and an unconstrained auxiliary output current. They do not model physical output limits or saturation.
+
 The shared `stamp_elements.py` module defines the Tableau constitutive stamps and the nodal admittance/current-source stamps. Zero conductance is valid and produces a zero stamp; negative conductance is rejected.
 
 For Tableau, build the constitutive matrices, assemble the Tableau system, and solve without a circuit argument:
@@ -57,11 +59,16 @@ python solve_linear_system.py artifacts/tableau.json -o artifacts/tableau_result
 python validate_solution.py artifacts/tableau.json artifacts/tableau_results.json -o artifacts/validation.json
 ```
 
-For AC, use the parsed circuit's single `.AC` directive and provide any desired transfer functions in a JSON file:
+For AC, use the parsed circuit's single `.AC` directive and provide any desired transfer functions in a JSON file. Select MNA for the `.OPAMP` extension:
 
 ```bash
-python solve_ac_sweep.py artifacts/circuit.json artifacts/incidence.json --formulation NODAL -o artifacts/ac_results.json
+python solve_ac_sweep.py artifacts/circuit.json artifacts/incidence.json --formulation MNA --transfers artifacts/transfers.json -o artifacts/ac_results.json
 ```
+
+To inspect and solve a single MNA point, assemble the system with `build_mna_system.py`, then pass both the system and circuit to the generic solver CLI; validate that solution with `validate_solution.py`.
+
+For validated AC sweeps, `generate_report.py` also renders the complex nodal-voltage vector `Vn` for every frequency when per-point solutions are present, alongside transfer magnitude/phase data.
+
 
 ## Tests
 
@@ -74,7 +81,7 @@ python -m unittest test_extended_tools.py
 
 ## MVP limitation
 
-`build_nodal_system.py` intentionally rejects ideal voltage sources because classical nodal analysis cannot represent their unknown current directly. Use the future Tableau or MNA tools for those circuits.
+`build_nodal_system.py` intentionally rejects ideal voltage sources and ideal op-amps because classical nodal analysis cannot represent their unknown currents/constraints directly. Use Tableau for supported ideal voltage-source networks, or MNA for the project ideal-op-amp extension.
 
 ## Sign convention
 

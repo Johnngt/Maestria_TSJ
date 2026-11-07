@@ -1,4 +1,4 @@
-# Bitácora de trabajo — Proyecto SPICE
+﻿# Bitácora de trabajo — Proyecto SPICE
 
 **Fecha:** 2026-10-10  
 **Proyecto:** Custom Agent educativo para simulación de circuitos tipo SPICE  
@@ -215,3 +215,100 @@ Para cerrar esas brechas:
 ## Estado al cierre de la jornada
 
 Los dos faltantes revisados en la sección 3.1 ya cuentan con implementación: validador de netlist dedicado y módulo independiente de stamps compartidos. Las pruebas confirman la integración en el flujo actual. No se realizó commit.
+
+### Especificación propuesta: op-amp ideal en formulación MNA
+
+Ante la solicitud de analizar el filtro activo no inversor de `Example/amplificador_operacional_no_inversor.jpg`, se confirmó que la guía menciona la extensión MNA como etapa para op-amps, pero ni la guía ni los skills especifican todavía el stamp aprobado del dispositivo. Por ello, lo siguiente es una **propuesta técnica pendiente de aprobación del profesor**, no una formulación aprobada ni una herramienta ya implementada.
+
+#### Objetivo y alcance
+
+Proponer una herramienta determinista que permita representar un amplificador operacional ideal conectado con terminal no inversora `NP`, terminal inversora `NM` y salida `OUT`, preservando las convenciones del proyecto. El modelo sería lineal ideal, sin rieles de alimentación, saturación, slew rate, ancho de banda, ruido ni corrientes de polarización; no debe interpretarse como modelo de un op-amp físico.
+
+El alcance candidato es análisis DC de operación lineal y análisis fasorial AC de redes R/G/C/L con fuentes independientes, fuentes ideales de voltaje y uno o más op-amps ideales. El barrido AC no admitiría frecuencia cero. La excitación solicitada de 20 V se conservaría como magnitud fasorial según la convención acordada por el curso; no se asumiría automáticamente si representa pico o RMS para un modelo físico.
+
+#### Modelo matemático candidato para revisión académica
+
+Representar el op-amp como un bloque ideal tipo nullor dentro de MNA, no como una rama pasiva añadida a la matriz de incidencia:
+
+- Corriente de entrada nula: no se añade conductancia ni corriente a los nodos `NP` y `NM`; sus ecuaciones KCL incluyen únicamente los elementos externos conectados.
+- Restricción diferencial en operación lineal: `V(NP) - V(NM) = 0`.
+- Salida ideal capaz de entregar o absorber corriente: añadir una incógnita auxiliar `Iop` que aparece con signo positivo en la ecuación KCL de `OUT` bajo la convención de corriente saliente; no imponer relación constitutiva entre `V(OUT)` e `Iop`.
+- Si hay saturación, lazo no lineal, conflicto de restricciones, salida indeterminada o falta de punto de operación, la herramienta debe informar que el modelo lineal ideal no resuelve ese caso, no escoger una solución silenciosamente.
+
+Para un sistema candidato con `n` nodos no de referencia, `p` ramas fuente ideal de voltaje y `q` op-amps, usar el orden documentado `X = [Vn; Iv; Iop]`, dimensión `n+p+q`, y una matriz por bloques:
+
+```text
+[ G   Bv   Cop ] [ Vn  ]   [ J  ]
+| Bv^T 0    0   | [ Iv  ] = [ Ev ]
+| Dop  0    0   | [ Iop ]   [ 0  ]
+```
+
+`G` procede de los stamps de admitancia compartidos; `J` conserva el signo de las fuentes según `+1` sale y `-1` entra; `Bv` y `Ev` describen las fuentes ideales de voltaje y su polaridad; cada columna de `Cop` agrega su corriente auxiliar al KCL de `OUT`; cada fila de `Dop` expresa `+1` en `NP`, `-1` en `NM`. Los índices de todos los bloques deben salir en metadatos y mantener el orden original de nodos/ramas. Este bloque es una decisión propuesta y requiere aprobación antes de programar.
+
+#### Propuesta de interfaz de herramienta
+
+- Crear `build_mna_system.py` como ensamblador del sistema extendido; mantener `solve_linear_system.py` y `validate_solution.py` sólo si sus esquemas pueden representar el nuevo orden y las restricciones sin adaptaciones ambiguas.
+- Extender el modelo de circuito con un componente multipuerto tipado (`opamp_ideal`) que conserve nombre, terminales `node_plus`, `node_minus`, `node_out`, número de línea y orientación de su incógnita auxiliar. No forzarlo dentro de una `Branch` pasiva de dos terminales.
+- Acordar la gramática del netlist con el curso antes de modificar el parser; la sintaxis de tres terminales no debe inventarse ni confundirse con un designador SPICE estándar.
+- Entradas/salidas JSON con `schema_version`, `source_name`, `analysis`, `frequency_hz`, orden de incógnitas, etiquetas de ecuaciones, bloques, mapa de índices, unidades, tolerancias, diagnósticos y referencia a cada línea fuente.
+- Rechazar nodos no declarados, pines repetidos cuando no estén permitidos, op-amps con terminales incompletos, valores no finitos, dimensiones inconsistentes y matrices singulares o incompatibles. Reportar rango, condición, residuo, KCL y residuo de restricción diferencial.
+- No escribir sobre netlists fuente ni artefactos previos; cada ejecución de prueba debe ir a un directorio nuevo.
+
+#### Plan mínimo de pruebas
+
+1. **Stamp local y polaridad:** un op-amp con `NP`, `NM`, `OUT` distintos debe crear exactamente una columna auxiliar en `OUT` y una ecuación `V(NP)-V(NM)=0`; verificar signos con el orden nodal existente.
+2. **Seguidor no inversor:** fuente ideal de prueba conectada a `NP`, `NM` realimentado desde `OUT`; comprobar `V(NP)=V(NM)` y salida igual a entrada dentro de tolerancia, además de residuos MNA finitos.
+3. **Amplificador no inversor resistivo:** `RA` entre `NM` y referencia, `RB` entre `OUT` y `NM`; comparar en prueba con una referencia analítica aprobada de la relación de ganancia. Para `RA=RB`, entrada AC de 20 V, el resultado ideal esperado sería una salida fasorial de 40 V sólo dentro del modelo lineal ilimitado; no inferir que un dispositivo físico no satura.
+4. **Filtro objetivo:** usar los dos capacitores, `G1`, `G2`, `RA`, `RB` y las terminales `NP/NM/OUT` confirmadas en el diagrama. Comprobar ensamble y validación por cada frecuencia, sin fijar respuesta de referencia hasta que valores y observables sean aprobados.
+5. **Compatibilidad regresiva:** volver a ejecutar los netlists resistivo, RC, RL y RLC ya soportados y confirmar que nodal/Tableau previos no cambian resultados ni esquemas.
+6. **Fuentes ideales múltiples y varios op-amps:** comprobar el orden de auxiliares, mapas de índices y trazabilidad cuando existen más de un bloque especial.
+7. **Errores estructurales:** pin faltante, nodo de referencia ausente, componente duplicado, fases no finitas, terminales inválidos y tipo de elemento desconocido; cada caso debe fallar con diagnóstico accionable antes de resolver.
+8. **Singularidad y mal condicionamiento:** op-amp sin realimentación suficiente, salida sin camino externo determinado, entrada flotante o restricciones contradictorias; exigir estado `FAIL`/`WARN` correcto y nunca presentar una salida como solución válida.
+9. **DC/AC y extremos:** fuentes DC/AC según modo, capacitor abierto en DC, inductor ideal con el tratamiento aprobado, frecuencias positivas para AC, fasores complejos y fase en el convenio del paquete.
+10. **Validación independiente:** contrastar el seguidor y el amplificador resistivo con soluciones analíticas aprobadas; opcionalmente comparar con SPICE externo sólo si se documentan modelo, condiciones, unidades y alineamiento exactos. No comparar una salida consigo misma.
+
+#### Criterio de aceptación antes del análisis del filtro
+
+La implementación sólo podrá comenzar después de que el profesor apruebe explícitamente: (a) el modelo matemático y signos del stamp, (b) la representación de la corriente de salida y compatibilidad con Tableau/MNA, (c) sintaxis del componente en el netlist, (d) condiciones de operación y tolerancias, (e) referencias analíticas/SPICE y (f) interpretación de amplitud AC de 20 V. Después deberán pasar las pruebas unitarias, la regresión existente y el filtro completo con validación por punto. Hasta entonces no se reportarán resultados numéricos del circuito objetivo.
+
+#### Nuevos aprendizajes sobre la extensión
+
+- El op-amp ideal no es una rama pasiva de dos terminales: requiere preservar tres terminales funcionales y añadir una incógnita de corriente de salida junto con una restricción diferencial.
+- La corriente de entrada nula se representa omitiendo stamps de conducción en las entradas; la igualdad `V+ = V-` sólo vale bajo la hipótesis de operación lineal y realimentación válida, no es una identidad universal del dispositivo.
+- Un modelo ideal sin rieles puede producir tensiones de salida arbitrariamente grandes; resultados como 40 V para una excitación de 20 V y ganancia ideal 2 serían propiedades matemáticas del modelo, no una afirmación de funcionamiento físico.
+- La descripción de conexiones y amplitud no sustituye la aprobación de ecuaciones, polaridades, sintaxis, condiciones de análisis y referencias de aceptación.
+- Una formulación mencionada como extensión MNA en una guía no significa que exista un stamp de op-amp aprobado ni que las herramientas actuales lo implementen.
+
+No se creó ni modificó ninguna herramienta de simulación para esta especificación, y no se ejecutó el filtro con op-amp.
+
+
+### 2026-11-02 - Implementacion y validacion MNA del op-amp ideal
+
+#### Trabajo realizado
+
+- Tras la aprobacion de la especificacion MNA, se implemento la extension educativa `.OPAMP <id> <n+> <n-> <out> IDEAL`. El parser y el validador aceptan la directiva; el modelo conserva los pines como bloque multipuerto, no como rama pasiva.
+- Se integro `build_mna_system.py`, con incognitas de voltaje nodal, corrientes de fuentes ideales y corriente auxiliar de salida del op-amp. El solver, la validacion de restricciones y los barridos AC admiten MNA. Los ensambladores nodal clasico y Tableau rechazan explicitamente los op-amps para evitar ignorarlos.
+- El modelo supone corriente de entrada cero y `V(n+)=V(n-)` en operacion lineal. No incluye rieles, saturacion ni otros limites fisicos. La directiva es propia del proyecto y no es sintaxis SPICE portable.
+- El grafo y las imagenes conservan la asignacion de terminales del op-amp como metadatos multipuerto, sin inventar una rama dirigida.
+- Se actualizaron README y skills relacionados y se agregaron pruebas para ganancia no inversora, filtro AC, rechazo de modelos/directivas invalidos, grafo multipuerto y reporte explicable.
+
+#### Netlist de demostracion y resultados
+
+- Se creo una ejecucion nueva en `Matematicas_avanzadas/Proyecto_SPICE/SPICE_Educational_Agent_First_6_Tools/artifacts/opamp_filter_20261102/`, sin sobrescribir ejecuciones anteriores.
+- El filtro usa `C1=C2=10 nF`, `G1=G2=100 uS`, `RA=RB=10 kOhm`, `V1 IN 0 AC 20 0` y `.OPAMP U1 NP NM OUT IDEAL`. Se eligio `.AC DEC 10 1 1Meg` (61 frecuencias) para esta demostracion; el intervalo no fue especificado por el usuario.
+- Puertas: validacion de netlist `PASS`; solucion MNA a 1 kHz `PASS`; validacion MNA `PASS`; barrido global `PASS`; 61 de 61 puntos con estado y validacion `PASS`.
+- La tool `solve_ac_sweep.py` reporto para `H=V(NOUT)/V(NIN)` a 1 kHz: magnitud `0.9050599`, `-0.8664535 dB`, fase `133.9270 grados`. A 1 Hz reporto magnitud `7.8956851e-7`; a 1 MHz, magnitud `2.0000025`, `6.0206109 dB` y fase `0.0911892 grados`.
+- Se generaron `explainable_report.md`, `report_bundle.json`, `ac_results.json`, topologia e incidencia, sistema/solucion/validacion MNA y las imagenes `plots/graph.png`, `plots/magnitude.png` y `plots/phase.png`.
+- Pruebas: `python -m unittest -v test_extended_tools.py`, 15/15 `PASS`; `python test_integration.py`, `PASS` con `V(N1)=0.75 V` y `V(N2)=0.25 V`.
+
+#### Comparacion y limites de aceptacion
+
+No se proporciono una referencia SPICE externa; no se ejecuto ni se afirma comparacion independiente. La validacion indicada es interna al modelo y a sus residuos. El nivel AC de 20 V se uso como fasor especificado en el netlist; el modelo ideal no limita la salida. Esta ejecucion no representa por si sola la calificacion completa de Unidad I.
+
+#### Nuevos aprendizajes
+
+- Un op-amp ideal de tres terminales no debe modelarse como una rama pasiva: MNA agrega una corriente auxiliar en la salida y una ecuacion diferencial; las entradas no reciben corriente.
+- La igualdad de entradas es una restriccion de operacion lineal, no una identidad para cualquier topologia. Sin realimentacion adecuada, las restricciones pueden volver el sistema singular o incompatibles.
+- Los limites fisicos de alimentacion y saturacion no existen en el modelo; por eso una salida numerica matematicamente valida no demuestra que un op-amp real pueda producirla.
+- Los dispositivos multipuerto deben preservarse en el esquema y los reportes con pines explicitos, sin incorporarlos al conteo de ramas de dos terminales.
+- El estado `PASS` por punto y la validacion interna no sustituyen una comparacion cuantitativa con una referencia externa compatible.

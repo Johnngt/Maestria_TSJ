@@ -1,0 +1,11 @@
+* Active filter from prior run; user-specified updated component values
+V1 IN 0 AC 1m 0
+C1 IN N1 0.1u
+C2 N1 NP 0.1u
+G1 N1 OUT 0.0007874015748031496
+G2 NP 0 0.0004347826086956522
+RA NM 0 1.27k
+RB OUT NM 2.3k
+.OPAMP U1 NP NM OUT IDEAL
+.AC DEC 10 10 100k
+.END

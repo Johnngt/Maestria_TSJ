@@ -26,6 +26,17 @@ class CircuitGraphError(ValueError):
 
 def build_graph(circuit: Circuit) -> nx.MultiDiGraph:
     graph = nx.MultiDiGraph(name=circuit.source_name)
+    graph.graph["opamps"] = [
+        {
+            "name": opamp.name,
+            "node_plus": opamp.node_plus,
+            "node_minus": opamp.node_minus,
+            "node_out": opamp.node_out,
+            "model": opamp.model,
+            "line_number": opamp.line_number,
+        }
+        for opamp in circuit.opamps
+    ]
     for node in circuit.nodes:
         graph.add_node(node.id, is_reference=node.is_reference)
     for branch in circuit.branches:
@@ -63,6 +74,17 @@ def graph_to_dict(graph: nx.MultiDiGraph, circuit: Circuit) -> dict[str, Any]:
             }
             for u, v, key, data in graph.edges(keys=True, data=True)
         ],
+        "opamps": [
+            {
+                "name": opamp.name,
+                "node_plus": opamp.node_plus,
+                "node_minus": opamp.node_minus,
+                "node_out": opamp.node_out,
+                "model": opamp.model,
+                "line_number": opamp.line_number,
+            }
+            for opamp in circuit.opamps
+        ],
         "is_connected": True,
     }
 
@@ -97,6 +119,15 @@ def draw_graph(graph: nx.MultiDiGraph, output: str | Path) -> None:
         x = (pos[u][0] + pos[v][0]) / 2
         y = (pos[u][1] + pos[v][1]) / 2
         plt.text(x, y, label, fontsize=9, bbox={"facecolor": "white", "alpha": 0.85, "edgecolor": "none"})
+    opamp_lines = [
+        f"{item['name']} ideal: +N{item['node_plus']}, -N{item['node_minus']}, out N{item['node_out']}"
+        for item in graph.graph.get("opamps", [])
+    ]
+    if opamp_lines:
+        plt.gca().text(
+            0.02, 0.98, "\n".join(opamp_lines), transform=plt.gca().transAxes,
+            va="top", bbox={"facecolor": "white", "alpha": 0.9, "edgecolor": "#595959"},
+        )
     plt.axis("off")
     plt.tight_layout()
     plt.savefig(output, dpi=180, bbox_inches="tight")

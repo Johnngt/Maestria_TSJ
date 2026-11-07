@@ -27,6 +27,11 @@ def build_tableau_system(
     constitutive_data: dict[str, Any],
 ) -> dict[str, Any]:
     """Build T*X=Wp using X=[Vb; I; Vn]."""
+    if circuit.opamps:
+        names = ", ".join(opamp.name for opamp in circuit.opamps)
+        raise TableauAssemblyError(
+            f"Ideal op-amp(s) {names} require the dedicated MNA formulation"
+        )
     branch_order = [branch.id for branch in circuit.branches]
     if incidence_data.get("branch_order") != branch_order:
         raise TableauAssemblyError("Incidence branch order does not match circuit branch order")

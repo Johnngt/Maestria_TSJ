@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
+import unicodedata
 from pathlib import Path
 from typing import Any
 
@@ -37,6 +39,79 @@ def _matrix_table(
         for label, row in zip(row_labels, matrix)
     ]
     return "\n".join([header, separator, *rows])
+
+def _display_width(value: str) -> int:
+    return sum(
+        0 if unicodedata.combining(char) else
+        2 if unicodedata.east_asian_width(char) in {"W", "F"} else 1
+        for char in value
+    )
+
+
+def _split_markdown_row(line: str) -> list[str]:
+    return [cell.strip() for cell in line.strip().strip("|").split("|")]
+
+
+def _align_markdown_tables(lines: list[str]) -> list[str]:
+    """Pad Markdown table cells so each column aligns with its header and rule."""
+    aligned: list[str] = []
+    index = 0
+    while index < len(lines):
+        if not (lines[index].startswith("|") and lines[index].endswith("|")):
+            aligned.append(lines[index])
+            index += 1
+            continue
+
+        end = index
+        while end < len(lines) and lines[end].startswith("|") and lines[end].endswith("|"):
+            end += 1
+        table_lines = lines[index:end]
+        rows = [_split_markdown_row(line) for line in table_lines]
+        column_count = len(rows[0])
+        if any(len(row) != column_count for row in rows):
+            raise ReportGenerationError("Markdown table rows have inconsistent column counts")
+
+        separator_index = next(
+            (row_index for row_index, row in enumerate(rows)
+             if all(re.fullmatch(r":?-{3,}:?", cell) for cell in row)),
+            None,
+        )
+        if separator_index is None:
+            raise ReportGenerationError("Markdown table is missing a valid alignment row")
+        separator = rows[separator_index]
+        widths = [3] * column_count
+        for row_index, row in enumerate(rows):
+            if row_index == separator_index:
+                continue
+            for column, cell in enumerate(row):
+                widths[column] = max(widths[column], _display_width(cell))
+
+        for row_index, row in enumerate(rows):
+            if row_index == separator_index:
+                cells = []
+                for width, rule in zip(widths, separator):
+                    left = rule.startswith(":")
+                    right = rule.endswith(":")
+                    dashes = "-" * max(3, width - int(left) - int(right))
+                    cells.append((":" if left else "") + dashes + (":" if right else ""))
+            else:
+                cells = []
+                for column, cell in enumerate(row):
+                    padding = widths[column] - _display_width(cell)
+                    rule = separator[column]
+                    left = rule.startswith(":")
+                    right = rule.endswith(":")
+                    if left and right:
+                        before = padding // 2
+                        after = padding - before
+                        cells.append(" " * before + cell + " " * after)
+                    elif right:
+                        cells.append(" " * padding + cell)
+                    else:
+                        cells.append(cell + " " * padding)
+            aligned.append("| " + " | ".join(cells) + " |")
+        index = end
+    return aligned
 
 
 def _vector_table(values: list[Any], labels: list[str], heading: str) -> str:
@@ -102,7 +177,7 @@ def generate_report(bundle: dict[str, Any]) -> str:
             [
                 "## Componentes normalizados",
                 "",
-                "| Componente | Tipo | Desde | Hacia | Valor SI | Unidad | Rama | Línea |",
+                "| Componente | Tipo | Desde | Hacia | Valor SI | Unidad | Rama | L?nea |",
                 "|---|---|---|---|---:|---|---|---:|",
             ]
         )
@@ -118,6 +193,26 @@ def generate_report(bundle: dict[str, Any]) -> str:
                     branch=item.get("id", item.get("branch_id", "")),
                     line=item.get("line_number", ""),
                 )
+            )
+        report_lines.append("")
+    opamps = circuit.get("opamps", [])
+    if opamps:
+        report_lines.extend(
+            [
+                "## Amplificadores operacionales ideales",
+                "",
+                "Modelo MNA ideal lineal: corrientes de entrada nulas, restriccion "
+                "V(n+)=V(n-) y corriente auxiliar en la salida. No modela rieles ni saturacion.",
+                "",
+                "| Op-amp | Entrada + | Entrada - | Salida | Linea |",
+                "|---|---|---|---|---:|",
+            ]
+        )
+        for opamp in opamps:
+            report_lines.append(
+                f"| {opamp.get('name', '')} | {opamp.get('node_plus', '')} | "
+                f"{opamp.get('node_minus', '')} | {opamp.get('node_out', '')} | "
+                f"{opamp.get('line_number', '')} |"
             )
         report_lines.append("")
 
@@ -220,14 +315,52 @@ def generate_report(bundle: dict[str, Any]) -> str:
         for point in ac_sweep.get("points", []):
             transfers = point.get("transfer_functions", {})
             values = "; ".join(
-                f"{name}: |H|={_format_number(item.get('magnitude'))}, "
-                f"fase={_format_number(item.get('phase_deg'))}°, dB={_format_number(item.get('magnitude_db'))}"
+                f"{name}: magnitud={_format_number(item.get('magnitude'))}, "
+                f"fase={_format_number(item.get('phase_deg'))} grados, "
+                f"dB={_format_number(item.get('magnitude_db'))}"
                 for name, item in transfers.items()
             ) or "(sin transferencias solicitadas)"
             report_lines.append(
                 f"| {_format_number(point.get('frequency_hz'))} | {point.get('status', '')} | {values} |"
             )
         report_lines.append("")
+        voltage_rows = []
+        voltage_labels: list[str] = []
+        for point in ac_sweep.get("points", []):
+            node_voltages = point.get("solution", {}).get("node_voltages", [])
+            voltage_rows.append((point, node_voltages))
+            for record in node_voltages:
+                label = record.get("label")
+                if label and label not in voltage_labels:
+                    voltage_labels.append(label)
+        if voltage_labels:
+            report_lines.extend(
+                [
+                    "### Vector de voltajes nodales Vn por frecuencia",
+                    "",
+                    "Fasores complejos en V; se excluye el nodo de referencia 0. "
+                    "Los puntos sin solucion conservan su estado y se indican como `n/a`.",
+                    "",
+                    "| Frecuencia (Hz) | Estado | "
+                    + " | ".join(f"{label} (V)" for label in voltage_labels)
+                    + " |",
+                    "|---:|---|"
+                    + "---:|" * len(voltage_labels),
+                ]
+            )
+            for point, records in voltage_rows:
+                values_by_label = {record.get("label"): record for record in records}
+                values = [
+                    _format_number(values_by_label[label])
+                    if label in values_by_label
+                    else "n/a"
+                    for label in voltage_labels
+                ]
+                report_lines.append(
+                    f"| {_format_number(point.get('frequency_hz'))} | "
+                    f"{point.get('status', '')} | " + " | ".join(values) + " |"
+                )
+            report_lines.append("")
     elif solution:
         report_lines.extend(["## Resultados", ""])
         for field, heading in (
@@ -293,7 +426,7 @@ def generate_report(bundle: dict[str, Any]) -> str:
     artifacts = bundle.get("artifacts", [])
     report_lines.extend([f"- `{item}`" for item in artifacts] or ["- El bundle no enumeró archivos de artefactos."])
     report_lines.append("")
-    return "\n".join(report_lines)
+    return "\n".join(_align_markdown_tables("\n".join(report_lines).splitlines()))
 
 
 def main() -> None:

@@ -95,6 +95,15 @@ def plot_results(
                 f"{data.get('branch_id', key)} {data.get('component', '')}".strip(),
                 fontsize=8, bbox={"facecolor": "white", "alpha": 0.8, "edgecolor": "none"},
             )
+        opamp_lines = [
+            f"{item['name']} ideal: +N{item['node_plus']}, -N{item['node_minus']}, out N{item['node_out']}"
+            for item in topology.get("opamps", [])
+        ]
+        if opamp_lines:
+            axis.text(
+                0.02, 0.98, "\n".join(opamp_lines), transform=axis.transAxes,
+                va="top", bbox={"facecolor": "white", "alpha": 0.9, "edgecolor": "#555555"},
+            )
         axis.set_title(f"{title}: topología orientada")
         axis.axis("off")
         figure.tight_layout()

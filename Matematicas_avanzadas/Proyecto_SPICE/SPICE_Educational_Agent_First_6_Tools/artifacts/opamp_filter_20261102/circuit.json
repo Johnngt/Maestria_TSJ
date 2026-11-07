@@ -1,0 +1,188 @@
+{
+  "schema_version": "1.0",
+  "source_name": "opamp_active_filter.cir",
+  "reference_node": "0",
+  "nodes": [
+    {
+      "id": "0",
+      "index_full": 0,
+      "index_reduced": null,
+      "is_reference": true
+    },
+    {
+      "id": "IN",
+      "index_full": 1,
+      "index_reduced": 0,
+      "is_reference": false
+    },
+    {
+      "id": "N1",
+      "index_full": 2,
+      "index_reduced": 1,
+      "is_reference": false
+    },
+    {
+      "id": "NM",
+      "index_full": 3,
+      "index_reduced": 2,
+      "is_reference": false
+    },
+    {
+      "id": "NP",
+      "index_full": 4,
+      "index_reduced": 3,
+      "is_reference": false
+    },
+    {
+      "id": "OUT",
+      "index_full": 5,
+      "index_reduced": 4,
+      "is_reference": false
+    }
+  ],
+  "branches": [
+    {
+      "id": "B1",
+      "index": 0,
+      "component_name": "V1",
+      "element_type": "V",
+      "node_from": "IN",
+      "node_to": "0",
+      "value_si": 20.0,
+      "unit": "volt",
+      "source_kind": "AC",
+      "ac_magnitude": 20.0,
+      "ac_phase_deg": 0.0,
+      "source_line": "V1 IN 0 AC 20 0",
+      "line_number": 2
+    },
+    {
+      "id": "B2",
+      "index": 1,
+      "component_name": "C1",
+      "element_type": "C",
+      "node_from": "IN",
+      "node_to": "N1",
+      "value_si": 1e-08,
+      "unit": "farad",
+      "source_kind": null,
+      "ac_magnitude": null,
+      "ac_phase_deg": null,
+      "source_line": "C1 IN N1 10n",
+      "line_number": 3
+    },
+    {
+      "id": "B3",
+      "index": 2,
+      "component_name": "C2",
+      "element_type": "C",
+      "node_from": "N1",
+      "node_to": "NP",
+      "value_si": 1e-08,
+      "unit": "farad",
+      "source_kind": null,
+      "ac_magnitude": null,
+      "ac_phase_deg": null,
+      "source_line": "C2 N1 NP 10n",
+      "line_number": 4
+    },
+    {
+      "id": "B4",
+      "index": 3,
+      "component_name": "G1",
+      "element_type": "G",
+      "node_from": "N1",
+      "node_to": "OUT",
+      "value_si": 9.999999999999999e-05,
+      "unit": "siemens",
+      "source_kind": null,
+      "ac_magnitude": null,
+      "ac_phase_deg": null,
+      "source_line": "G1 N1 OUT 100u",
+      "line_number": 5
+    },
+    {
+      "id": "B5",
+      "index": 4,
+      "component_name": "G2",
+      "element_type": "G",
+      "node_from": "NP",
+      "node_to": "0",
+      "value_si": 9.999999999999999e-05,
+      "unit": "siemens",
+      "source_kind": null,
+      "ac_magnitude": null,
+      "ac_phase_deg": null,
+      "source_line": "G2 NP 0 100u",
+      "line_number": 6
+    },
+    {
+      "id": "B6",
+      "index": 5,
+      "component_name": "RA",
+      "element_type": "R",
+      "node_from": "NM",
+      "node_to": "0",
+      "value_si": 10000.0,
+      "unit": "ohm",
+      "source_kind": null,
+      "ac_magnitude": null,
+      "ac_phase_deg": null,
+      "source_line": "RA NM 0 10k",
+      "line_number": 7
+    },
+    {
+      "id": "B7",
+      "index": 6,
+      "component_name": "RB",
+      "element_type": "R",
+      "node_from": "OUT",
+      "node_to": "NM",
+      "value_si": 10000.0,
+      "unit": "ohm",
+      "source_kind": null,
+      "ac_magnitude": null,
+      "ac_phase_deg": null,
+      "source_line": "RB OUT NM 10k",
+      "line_number": 8
+    }
+  ],
+  "opamps": [
+    {
+      "name": "U1",
+      "node_plus": "NP",
+      "node_minus": "NM",
+      "node_out": "OUT",
+      "model": "IDEAL",
+      "source_line": ".OPAMP U1 NP NM OUT IDEAL",
+      "line_number": 9
+    }
+  ],
+  "directives": [
+    {
+      "command": "OPAMP",
+      "name": "U1",
+      "model": "IDEAL",
+      "node_plus": "NP",
+      "node_minus": "NM",
+      "node_out": "OUT",
+      "source_line": ".OPAMP U1 NP NM OUT IDEAL",
+      "line_number": 9
+    },
+    {
+      "command": "AC",
+      "sweep": "DEC",
+      "points": 10,
+      "f_start_hz": 1.0,
+      "f_stop_hz": 1000000.0,
+      "source_line": ".AC DEC 10 1 1Meg",
+      "line_number": 10
+    },
+    {
+      "command": "END",
+      "source_line": ".END",
+      "line_number": 11
+    }
+  ],
+  "warnings": []
+}

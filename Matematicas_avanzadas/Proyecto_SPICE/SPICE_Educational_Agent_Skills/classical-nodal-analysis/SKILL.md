@@ -55,6 +55,8 @@ Voltajes nodales y de rama, corrientes, matriz M, vector b, métricas numéricas
 
 Si existe una fuente ideal de voltaje no tratable, no crear una admitancia ficticia. Informar que se requiere Tableau o MNA.
 
+La directiva de op-amp ideal del proyecto requiere MNA; no aplicar nodal clasica ni ignorar sus restricciones.
+
 ## Ejemplo
 
 Una red resistiva excitada por fuente de corriente es compatible. Un divisor excitado por fuente ideal de voltaje requiere una formulación que represente esa rama especial.

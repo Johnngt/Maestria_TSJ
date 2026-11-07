@@ -80,8 +80,15 @@ def validate_solution(
             currents = json_to_complex_vector(raw["I"])
             if a.ndim != 2 or a.shape[1] != currents.size:
                 raise ValueError("Incidence matrix and branch-current dimensions do not match")
+            kcl_residual = a @ currents
+            if system.get("formulation") == "MNA":
+                opamp_incidence = json_to_complex_matrix(system["opamp_output_incidence"])
+                opamp_currents = json_to_complex_vector(raw["I_opamps"])
+                if opamp_incidence.shape != (a.shape[0], opamp_currents.size):
+                    raise ValueError("Op-amp output incidence and current dimensions do not match")
+                kcl_residual = kcl_residual + opamp_incidence @ opamp_currents
             checks.append(
-                _metric("KCL", a @ currents, float(np.linalg.norm(a) * np.linalg.norm(currents)), atol, rtol)
+                _metric("KCL", kcl_residual, float(np.linalg.norm(a) * np.linalg.norm(currents)), atol, rtol)
             )
 
             if "Vb" in raw and "Vn" in raw:
@@ -119,6 +126,60 @@ def validate_solution(
             checks.append(
                 _metric("constitutive_residual", constitutive_residual, constitutive_scale, atol, rtol)
             )
+        if system.get("formulation") == "MNA":
+            vn = json_to_complex_vector(raw["Vn"])
+            voltage_incidence = json_to_complex_matrix(system["voltage_source_incidence"])
+            voltage_values = json_to_complex_vector(system["voltage_source_values"])
+            if voltage_incidence.shape != (vn.size, voltage_values.size):
+                raise ValueError("Voltage-source incidence and value dimensions do not match")
+            source_residual = voltage_incidence.T @ vn - voltage_values
+            checks.append(
+                _metric(
+                    "voltage_source_constraints",
+                    source_residual,
+                    float(np.linalg.norm(voltage_incidence) * np.linalg.norm(vn) + np.linalg.norm(voltage_values)),
+                    atol,
+                    rtol,
+                )
+            )
+
+            differential = json_to_complex_matrix(system["opamp_differential_matrix"])
+            if differential.shape != (len(system.get("opamp_names", [])), vn.size):
+                raise ValueError("Op-amp differential matrix dimensions do not match nodes")
+            differential_residual = differential @ vn
+            checks.append(
+                _metric(
+                    "opamp_differential_constraint",
+                    differential_residual,
+                    float(np.linalg.norm(differential) * np.linalg.norm(vn)),
+                    atol,
+                    rtol,
+                )
+            )
+
+            admittances = json_to_complex_vector(system["branch_admittances"])
+            source_currents = json_to_complex_vector(system["current_sources"])
+            source_indices = {int(index) for index in system["voltage_source_branch_indices"]}
+            if admittances.size != vb.size or source_currents.size != vb.size:
+                raise ValueError("MNA branch stamps do not match branch-voltage vector")
+            regular_indices = [index for index in range(vb.size) if index not in source_indices]
+            branch_residual = currents[regular_indices] - (
+                admittances[regular_indices] * vb[regular_indices] + source_currents[regular_indices]
+            )
+            checks.append(
+                _metric(
+                    "branch_admittance",
+                    branch_residual,
+                    float(
+                        np.linalg.norm(currents[regular_indices])
+                        + np.linalg.norm(admittances[regular_indices] * vb[regular_indices])
+                        + np.linalg.norm(source_currents[regular_indices])
+                    ),
+                    atol,
+                    rtol,
+                )
+            )
+
         elif all(key in system for key in ("Y_branch", "J_branch")) and all(
             key in raw for key in ("Vb", "I")
         ):

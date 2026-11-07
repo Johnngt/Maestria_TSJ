@@ -10,15 +10,21 @@ import numpy as np
 from build_circuit_model import build_circuit, circuit_to_dict
 from build_constitutive_matrices import build_constitutive_matrices
 from build_incidence_matrix import build_incidence_matrices
-from build_nodal_system import build_nodal_system
+from build_nodal_system import NodalCompatibilityError, build_nodal_system
+from build_mna_system import MNAAssemblyError, build_mna_system
 from build_oriented_graph import build_graph, graph_to_dict
-from build_tableau_system import build_tableau_system
+from build_tableau_system import TableauAssemblyError, build_tableau_system
 from compare_reference import ReferenceComparisonError, compare_reference
-from generate_report import ReportGenerationError, generate_report
+from generate_report import ReportGenerationError, _align_markdown_tables, generate_report
 from parse_netlist import parse_netlist_text
 from plot_results import plot_results
 from solve_ac_sweep import generate_frequencies, solve_ac_sweep
-from solve_linear_system import LinearSystemError, solve_matrix_system, solve_nodal_system
+from solve_linear_system import (
+    LinearSystemError,
+    solve_matrix_system,
+    solve_mna_system,
+    solve_nodal_system,
+)
 from stamp_elements import StampError, constitutive_stamp, nodal_stamp
 from validate_solution import validate_solution
 from validate_netlist import validate_netlist_text
@@ -93,6 +99,90 @@ class ExtendedToolsTests(unittest.TestCase):
         self.assertAlmostEqual(source.current, source_model.w / source_model.z)
         with self.assertRaises(StampError):
             nodal_stamp(circuit.branches[3])
+
+    def test_mna_ideal_opamp_non_inverting_gain_and_validation(self) -> None:
+        circuit, incidence = make_circuit(
+            "\n".join(
+                [
+                    "V1 NP 0 AC 20 0",
+                    "RA NM 0 10k",
+                    "RB OUT NM 10k",
+                    ".OPAMP U1 NP NM OUT IDEAL",
+                    ".AC LIN 1 1k 1k",
+                    ".END",
+                ]
+            ),
+            "non_inverting.cir",
+        )
+        self.assertEqual(len(circuit.opamps), 1)
+        self.assertIn("OUT", [node.id for node in circuit.nodes])
+        system = build_mna_system(circuit, incidence, 1000.0)
+        solution = solve_mna_system(system, circuit)
+        validation = validate_solution(system, solution)
+        values = {item["label"]: complex(item["real"], item["imag"]) for item in solution["unknowns"]}
+        self.assertAlmostEqual(values["V(NOUT)"], 40.0 + 0.0j, places=10)
+        self.assertAlmostEqual(values["V(NNP)"], 20.0 + 0.0j, places=10)
+        self.assertEqual(validation["status"], "PASS")
+        checks = {item["name"]: item["passed"] for item in validation["checks"]}
+        self.assertTrue(checks["KCL"])
+        self.assertTrue(checks["voltage_source_constraints"])
+        self.assertTrue(checks["opamp_differential_constraint"])
+        with self.assertRaises(NodalCompatibilityError):
+            build_nodal_system(circuit, incidence, 1000.0)
+        with self.assertRaises(TableauAssemblyError):
+            build_tableau_system(
+                circuit,
+                incidence,
+                build_constitutive_matrices(circuit, 1000.0),
+            )
+
+    def test_mna_active_filter_ac_sweep_validates_every_point(self) -> None:
+        text = "\n".join(
+            [
+                "V1 IN 0 AC 20 0",
+                "C1 IN N1 10n",
+                "C2 N1 NP 10n",
+                "G1 N1 OUT 100u",
+                "G2 NP 0 100u",
+                "RA NM 0 10k",
+                "RB OUT NM 10k",
+                ".OPAMP U1 NP NM OUT IDEAL",
+                ".AC DEC 10 1 1Meg",
+                ".END",
+            ]
+        )
+        circuit, incidence = make_circuit(text, "active_filter.cir")
+        sweep = next(item for item in circuit.directives if item["command"] == "AC")
+        result = solve_ac_sweep(
+            circuit,
+            incidence,
+            sweep,
+            "MNA",
+            {"H": {"numerator": "V(NOUT)", "denominator": "V(NIN)"}},
+        )
+        self.assertEqual(result["status"], "PASS")
+        self.assertEqual(result["sweep"]["frequency_count"], 61)
+        self.assertTrue(all(point["status"] == "PASS" for point in result["points"]))
+        self.assertTrue(
+            all(point["validation"]["status"] == "PASS" for point in result["points"])
+        )
+        self.assertEqual(result["points"][0]["transfer_functions"]["H"]["status"], "PASS")
+        self.assertGreater(
+            result["points"][-1]["transfer_functions"]["H"]["magnitude"], 1.99
+        )
+
+    def test_opamp_netlist_diagnostics_reject_bad_model_and_duplicate_name(self) -> None:
+        invalid_model = validate_netlist_text(
+            "V1 NP 0 AC 1\n.OPAMP U1 NP NM OUT GENERIC\n.END"
+        )
+        self.assertEqual(invalid_model["status"], "FAIL")
+        self.assertIn("INVALID_DIRECTIVE", {item["code"] for item in invalid_model["diagnostics"]})
+
+        duplicate = validate_netlist_text(
+            "R1 NP 0 1k\n.OPAMP R1 NP NM OUT IDEAL\n.END"
+        )
+        self.assertEqual(duplicate["status"], "FAIL")
+        self.assertIn("DUPLICATE_COMPONENT", {item["code"] for item in duplicate["diagnostics"]})
 
     def test_constitutive_models_cover_dc_and_ac_sources(self) -> None:
         text = "\n".join(
@@ -201,6 +291,17 @@ class ExtendedToolsTests(unittest.TestCase):
         with self.assertRaises(ReferenceComparisonError):
             compare_reference(ac_actual, misaligned)
 
+    def test_report_aligns_markdown_table_columns(self) -> None:
+        lines = [
+            "| Nodo | Valor complejo |",
+            "|---|---:|",
+            "| N1 | 1 + j2 |",
+            "| Nodo_largo | -0.003 |",
+        ]
+        aligned = _align_markdown_tables(lines)
+        self.assertEqual(len({len(line) for line in aligned}), 1)
+        self.assertIn(":", aligned[1])
+
     def test_report_uses_validated_bundle_and_rejects_mixed_runs(self) -> None:
         text = "\n".join(["V1 1 0 DC 10", "R1 1 2 1k", "R2 2 0 2k", ".END"])
         circuit, incidence = make_circuit(text, "divider.cir")
@@ -226,6 +327,82 @@ class ExtendedToolsTests(unittest.TestCase):
         mixed = {**bundle, "system": {**system, "run_id": "run-2"}}
         with self.assertRaises(ReportGenerationError):
             generate_report(mixed)
+
+    def test_report_includes_ac_node_voltage_vector_per_frequency(self) -> None:
+        bundle = {
+            "source_name": "ac.cir",
+            "ac_sweep": {
+                "status": "PASS",
+                "formulation": "MNA",
+                "sweep": {"type": "DEC", "frequency_count": 1},
+                "points": [
+                    {
+                        "frequency_hz": 10.0,
+                        "status": "PASS",
+                        "solution": {
+                            "node_voltages": [
+                                {"label": "V(NIN)", "real": 0.001, "imag": 0.0, "unit": "volt"},
+                                {"label": "V(NOUT)", "real": 0.002, "imag": -0.001, "unit": "volt"},
+                            ]
+                        },
+                        "transfer_functions": {
+                            "Vo_Vi": {"magnitude": 2.236, "phase_deg": -26.565, "magnitude_db": 6.99}
+                        },
+                    }
+                ],
+            },
+        }
+        report = generate_report(bundle)
+        self.assertIn("### Vector de voltajes nodales Vn por frecuencia", report)
+        self.assertIn("V(NIN) (V)", report)
+        self.assertIn("V(NOUT) (V)", report)
+        self.assertIn("0.002 - j0.001", report)
+
+    def test_report_describes_ideal_opamp_mna_and_terminals(self) -> None:
+        text = "\n".join(
+            [
+                "V1 NP 0 AC 20 0",
+                "RA NM 0 10k",
+                "RB OUT NM 10k",
+                ".OPAMP U1 NP NM OUT IDEAL",
+                ".AC LIN 1 1k 1k",
+                ".END",
+            ]
+        )
+        circuit, incidence = make_circuit(text, "non_inverting.cir")
+        system = build_mna_system(circuit, incidence, 1000.0)
+        solution = solve_mna_system(system, circuit)
+        validation = validate_solution(system, solution)
+        bundle = {
+            "source_name": "non_inverting.cir",
+            "netlist_text": text,
+            "circuit": circuit_to_dict(circuit),
+            "system": system,
+            "solution": solution,
+            "validation": validation,
+        }
+        report = generate_report(bundle)
+        self.assertIn("## Amplificadores operacionales ideales", report)
+        self.assertIn("V(n+)=V(n-)", report)
+        self.assertIn("| U1     | NP        | NM        | OUT    |", report)
+
+    def test_oriented_graph_preserves_multiterminal_opamp_metadata(self) -> None:
+        circuit, _ = make_circuit(
+            "\n".join(
+                [
+                    "V1 NP 0 AC 1",
+                    "RA NM 0 10k",
+                    "RB OUT NM 10k",
+                    ".OPAMP U1 NP NM OUT IDEAL",
+                    ".END",
+                ]
+            )
+        )
+        topology = graph_to_dict(build_graph(circuit), circuit)
+        self.assertEqual(
+            topology["opamps"],
+            [{"name": "U1", "node_plus": "NP", "node_minus": "NM", "node_out": "OUT", "model": "IDEAL", "line_number": 4}],
+        )
 
     def test_plot_results_writes_topology_and_bode_files(self) -> None:
         from parse_netlist import parse_netlist_file

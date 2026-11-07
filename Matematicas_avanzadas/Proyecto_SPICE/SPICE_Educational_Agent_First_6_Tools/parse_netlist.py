@@ -10,7 +10,10 @@ Purpose:
 Supported MVP elements:
     R, C, L, independent voltage sources V, independent current sources I.
 Supported directives:
-    .OP, .AC LIN, .AC DEC, .END
+    .OP, .AC LIN, .AC DEC, .OPAMP, .END
+
+Project extension:
+    .OPAMP <name> <node+> <node-> <output> IDEAL
 
 Author: Dr. Francisco E. Rangel-Patiño
 """
@@ -179,6 +182,29 @@ def parse_directive(tokens: list[str], line_number: int, source_line: str) -> di
             "source_line": source_line,
             "line_number": line_number,
         }
+    if command == ".OPAMP":
+        if len(tokens) != 6 or tokens[5].upper() != "IDEAL":
+            raise NetlistParseError(
+                f"Line {line_number}: expected .OPAMP name node+ node- output IDEAL"
+            )
+        name = tokens[1]
+        if not name or not name[0].isalpha():
+            raise NetlistParseError(f"Line {line_number}: op-amp name must start with a letter")
+        node_plus, node_minus, node_out = (normalize_node(token) for token in tokens[2:5])
+        if len({node_plus, node_minus, node_out}) != 3:
+            raise NetlistParseError(
+                f"Line {line_number}: ideal op-amp terminals must connect to distinct nodes"
+            )
+        return {
+            "command": "OPAMP",
+            "name": name,
+            "model": "IDEAL",
+            "node_plus": node_plus,
+            "node_minus": node_minus,
+            "node_out": node_out,
+            "source_line": source_line,
+            "line_number": line_number,
+        }
     raise NetlistParseError(f"Line {line_number}: unsupported directive {tokens[0]!r}")
 
 
@@ -213,6 +239,13 @@ def parse_netlist_text(text: str, source_name: str = "<memory>") -> dict[str, An
         tokens = stripped.split()
         if stripped.startswith("."):
             directive = parse_directive(tokens, line_number, raw)
+            if directive["command"] == "OPAMP":
+                canonical_name = directive["name"].upper()
+                if canonical_name in names:
+                    raise NetlistParseError(
+                        f"Line {line_number}: duplicate component name {directive['name']!r}"
+                    )
+                names.add(canonical_name)
             directives.append(directive)
             if directive["command"] == "END":
                 saw_end = True
@@ -229,8 +262,14 @@ def parse_netlist_text(text: str, source_name: str = "<memory>") -> dict[str, An
         raise NetlistParseError("The netlist contains no supported elements")
     if not saw_end:
         warnings.append(".END directive not found; parsed to end of file")
+    node_ids = {e["node_from"] for e in elements} | {e["node_to"] for e in elements}
+    for directive in directives:
+        if directive["command"] == "OPAMP":
+            node_ids.update(
+                (directive["node_plus"], directive["node_minus"], directive["node_out"])
+            )
     nodes = sorted(
-        {e["node_from"] for e in elements} | {e["node_to"] for e in elements},
+        node_ids,
         key=lambda x: (x != "0", 0, int(x)) if x.isdigit() else (True, 1, x.lower()),
     )
     if "0" not in nodes:

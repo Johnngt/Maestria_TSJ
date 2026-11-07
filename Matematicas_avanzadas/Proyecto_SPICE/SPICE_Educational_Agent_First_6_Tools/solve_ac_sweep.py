@@ -11,10 +11,16 @@ from typing import Any
 import numpy as np
 
 from build_circuit_model import Circuit, load_circuit
+from build_mna_system import MNAAssemblyError, build_mna_system
 from build_constitutive_matrices import build_constitutive_matrices
 from build_nodal_system import NodalCompatibilityError, build_nodal_system
 from build_tableau_system import build_tableau_system
-from solve_linear_system import LinearSystemError, solve_matrix_system, solve_nodal_system
+from solve_linear_system import (
+    LinearSystemError,
+    solve_matrix_system,
+    solve_mna_system,
+    solve_nodal_system,
+)
 from validate_solution import validate_solution
 
 
@@ -113,8 +119,10 @@ def solve_ac_sweep(
         sweep["sweep"], int(sweep["points"]), float(sweep["f_start_hz"]), float(sweep["f_stop_hz"])
     )
     mode = formulation.upper()
-    if mode not in {"NODAL", "TABLEAU"}:
-        raise ACSweepError("Formulation must be NODAL or TABLEAU")
+    if mode not in {"NODAL", "TABLEAU", "MNA"}:
+        raise ACSweepError("Formulation must be NODAL, TABLEAU, or MNA")
+    if circuit.opamps and mode != "MNA":
+        raise ACSweepError("Circuit contains ideal op-amps; select the MNA formulation")
     transfer_functions = transfer_functions or {}
     points: list[dict[str, Any]] = []
 
@@ -124,9 +132,12 @@ def solve_ac_sweep(
             if mode == "NODAL":
                 system = build_nodal_system(circuit, incidence_data, frequency)
                 solution = solve_nodal_system(system, circuit, atol, rtol)
-            else:
+            elif mode == "TABLEAU":
                 system = build_tableau_system(circuit, incidence_data, constitutive)
                 solution = solve_matrix_system(system, atol, rtol)
+            else:
+                system = build_mna_system(circuit, incidence_data, frequency)
+                solution = solve_mna_system(system, circuit, atol, rtol)
             validation = validate_solution(
                 system, solution, atol=atol, rtol=rtol, condition_limit=condition_limit
             )
@@ -144,7 +155,13 @@ def solve_ac_sweep(
                     "transfer_functions": transfers,
                 }
             )
-        except (ACSweepError, LinearSystemError, NodalCompatibilityError, ValueError) as exc:
+        except (
+            ACSweepError,
+            LinearSystemError,
+            NodalCompatibilityError,
+            MNAAssemblyError,
+            ValueError,
+        ) as exc:
             points.append(
                 {
                     "frequency_hz": frequency,
@@ -180,7 +197,7 @@ def main() -> None:
     parser.add_argument("circuit_json")
     parser.add_argument("incidence_json")
     parser.add_argument("-o", "--output", required=True)
-    parser.add_argument("--formulation", choices=("NODAL", "TABLEAU"), default="NODAL")
+    parser.add_argument("--formulation", choices=("NODAL", "TABLEAU", "MNA"), default="NODAL")
     parser.add_argument("--transfers", help="JSON mapping transfer names to numerator/denominator labels")
     parser.add_argument("--atol", type=float, default=1e-10)
     parser.add_argument("--rtol", type=float, default=1e-8)

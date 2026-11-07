@@ -35,6 +35,14 @@ Este skill no recalcula. Consume artefactos generados y validados por las tools.
 13. Advertencias, limitaciones y elementos no soportados.
 14. Archivos generados y reproducibilidad.
 
+## Tabla de voltajes nodales en AC
+
+Cuando el artefacto del barrido AC contiene la solucion por frecuencia, incluir tablas fasoriales de `Vn` separadas por nodo, con frecuencia, estado, partes real/imaginaria, magnitud y fase provenientes del solver. Mantener el orden de nodos y conservar fallos como `n/a` con su estado; no interpolar ni calcular valores que no esten en los artefactos. La tabla de transferencias debe separar magnitud, dB y fase en columnas propias.
+
+## Alineacion de tablas
+
+Alinear el ancho de cada columna con su encabezado y valores; los separadores Markdown deben cubrir los mismos anchos. Evitar caracteres `|` dentro del contenido de una celda salvo que se escapen correctamente.
+
 ## Formato de matrices
 
 Mostrar encabezados de filas y columnas. Para matrices grandes, incluir dimensiones, resumen y archivo adjunto completo; no truncar silenciosamente.

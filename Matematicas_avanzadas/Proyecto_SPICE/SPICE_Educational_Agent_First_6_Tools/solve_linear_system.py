@@ -102,9 +102,8 @@ def solve_matrix_system(
 
     raw: dict[str, Any] = {"X": [complex_to_json(value) for value in values]}
     blocks = system.get("unknown_blocks", {})
-    for block_name in ("Vb", "I", "Vn"):
-        bounds = blocks.get(block_name)
-        if bounds is not None and len(bounds) == 2:
+    for block_name, bounds in blocks.items():
+        if len(bounds) == 2:
             raw[block_name] = [complex_to_json(value) for value in values[bounds[0]:bounds[1]]]
 
     return {
@@ -124,6 +123,65 @@ def solve_matrix_system(
         "raw": raw,
     }
 
+
+
+def solve_mna_system(
+    system: dict[str, Any],
+    circuit: Circuit,
+    atol: float = 1e-10,
+    rtol: float = 1e-8,
+) -> dict[str, Any]:
+    """Solve an MNA system and recover node and branch observables."""
+    if system.get("formulation") != "MNA":
+        raise LinearSystemError("System formulation must be MNA")
+    branch_order = [branch.id for branch in circuit.branches]
+    if system.get("branch_order") != branch_order:
+        raise LinearSystemError("Circuit branch order does not match MNA system branch order")
+    solved = solve_matrix_system(system, atol, rtol)
+    raw_x = json_to_complex_vector(solved["raw"]["X"])
+    blocks = system.get("unknown_blocks", {})
+    try:
+        vn = raw_x[slice(*blocks["Vn"])]
+        source_currents = raw_x[slice(*blocks["I_voltage_sources"])]
+        opamp_currents = raw_x[slice(*blocks["I_opamps"])]
+        a = np.asarray(system["A_reduced"], dtype=float)
+        branch_admittances = json_to_complex_vector(system["branch_admittances"])
+        current_sources = json_to_complex_vector(system["current_sources"])
+        source_indices = [int(value) for value in system["voltage_source_branch_indices"]]
+    except (KeyError, TypeError, ValueError) as error:
+        raise LinearSystemError(f"Malformed MNA recovery metadata: {error}") from error
+    if a.shape != (vn.size, len(branch_order)):
+        raise LinearSystemError("MNA incidence matrix and unknown dimensions do not match")
+    if branch_admittances.shape != (len(branch_order),) or current_sources.shape != (len(branch_order),):
+        raise LinearSystemError("MNA branch stamp dimensions do not match circuit")
+    if len(source_indices) != source_currents.size:
+        raise LinearSystemError("MNA voltage-source current map does not match unknown vector")
+
+    vb = a.T @ vn
+    branch_currents = branch_admittances * vb + current_sources
+    for source_index, current in zip(source_indices, source_currents):
+        if source_index < 0 or source_index >= len(branch_order):
+            raise LinearSystemError("MNA voltage-source branch index is out of range")
+        branch_currents[source_index] = current
+
+    node_labels = [f"V(N{node})" for node in system["node_order"]]
+    branch_labels = [
+        f"{branch.id} ({branch.component_name})" for branch in circuit.branches
+    ]
+    opamp_labels = [f"I({name})" for name in system.get("opamp_names", [])]
+    solved["formulation"] = "MNA"
+    solved["node_voltages"] = vector_records(node_labels, vn, "volt")
+    solved["branch_voltages"] = vector_records(branch_labels, vb, "volt")
+    solved["branch_currents"] = vector_records(branch_labels, branch_currents, "ampere")
+    solved["opamp_output_currents"] = vector_records(opamp_labels, opamp_currents, "ampere")
+    solved["raw"].update({
+        "Vn": [complex_to_json(value) for value in vn],
+        "Vb": [complex_to_json(value) for value in vb],
+        "I": [complex_to_json(value) for value in branch_currents],
+        "I_voltage_sources": [complex_to_json(value) for value in source_currents],
+        "I_opamps": [complex_to_json(value) for value in opamp_currents],
+    })
+    return solved
 
 def solve_nodal_system(
     system: dict[str, Any],
@@ -210,7 +268,12 @@ def main() -> None:
     parser.add_argument("--rtol", type=float, default=1e-8)
     args = parser.parse_args()
     system = json.loads(Path(args.system_json).read_text(encoding="utf-8"))
-    if system.get("formulation") == "TABLEAU" or "unknown_blocks" in system:
+    if system.get("formulation") == "MNA":
+        if not args.circuit_json:
+            parser.error("circuit_json is required for MNA physical-variable recovery")
+        circuit = load_circuit(args.circuit_json)
+        result = solve_mna_system(system, circuit, args.atol, args.rtol)
+    elif system.get("formulation") == "TABLEAU" or "unknown_blocks" in system:
         result = solve_matrix_system(system, args.atol, args.rtol)
     else:
         if not args.circuit_json:
@@ -219,8 +282,9 @@ def main() -> None:
         result = solve_nodal_system(system, circuit, args.atol, args.rtol)
     Path(args.output).write_text(json.dumps(result, indent=2), encoding="utf-8")
     print(f"Solved {result['analysis']} system: PASS -> {args.output}")
-    for item in result["node_voltages"]:
-        print(f"{item['label']} = {item['real']:.9g} + j{item['imag']:.9g} {item['unit']}")
+    for item in result.get("node_voltages", result.get("unknowns", [])):
+        if item.get("unit") == "volt":
+            print(f"{item['label']} = {item['real']:.9g} + j{item['imag']:.9g} {item['unit']}")
 
 
 if __name__ == "__main__":

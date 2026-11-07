@@ -84,6 +84,11 @@ def build_nodal_system(
     frequency_hz: float | None = None,
 ) -> dict[str, Any]:
     """Build M*Vn=b using A*Y*A.T and orientation-consistent current injections."""
+    if circuit.opamps:
+        names = ", ".join(opamp.name for opamp in circuit.opamps)
+        raise NodalCompatibilityError(
+            f"Ideal op-amp(s) {names} require MNA; classical nodal analysis omits their constraints"
+        )
     if frequency_hz is not None and (not math.isfinite(frequency_hz) or frequency_hz < 0):
         raise NodalCompatibilityError("Frequency must be finite and non-negative")
     a = np.array(incidence_data["A_reduced"], dtype=float)

@@ -47,9 +47,9 @@ Usar `Y*Vb + Z*I = W`, con una ecuación por rama simple o un bloque de ecuacion
 5. Registrar la ecuación y el componente que originaron cada entrada.
 6. Rechazar combinaciones no soportadas.
 
-## Elementos posteriores al MVP
+## Extension MNA del op-amp ideal
 
-Fuentes controladas y op-amps ideales requieren modelos de bloque y ramas especiales. No improvisar sus stamps. Incorporarlos sólo cuando existan ecuaciones, convenciones, tests y referencias aprobadas.
+El proyecto implementa una extension lineal ideal MNA con la directiva no portable `.OPAMP <id> <n+> <n-> <out> IDEAL`. Este bloque de tres terminales no es una rama pasiva ni un sello diagonal Y/Z/W: tiene corriente de entrada cero, impone `V(n+)-V(n-)=0` bajo la hipotesis de operacion lineal y agrega una incognita auxiliar de corriente de salida a KCL. No modela rieles, saturacion, ancho de banda ni otros limites fisicos. Otras fuentes controladas y modelos de op-amp no estan soportados; no improvisar sellos.
 
 ## Tools relacionadas
 

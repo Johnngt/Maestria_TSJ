@@ -56,6 +56,10 @@ Cada fila de Y/Z/W debe registrar componente, rama, ecuación constitutiva y uni
 
 Dimensiones, orden de ramas, `||A I||`, `||Vb-A.T Vn||`, `||Y Vb+Z I-W||` y `||T X-Wp||`.
 
+## Extension MNA para op-amp ideal
+
+El op-amp ideal no se debe forzar a una rama Tableau pasiva. La extension del proyecto lo resuelve en `build_mna_system.py` con `X=[Vn; Iv; Iop]`, agregando KCL para los nodos, restricciones de fuente de voltaje y una fila `V(n+)-V(n-)=0` por op-amp. Cada corriente auxiliar `Iop` tiene coeficiente `+1` en la fila KCL de `node_out` bajo la convencion de corriente saliente. `solve_linear_system.py` recupera variables y `validate_solution.py` comprueba KCL, fuentes y restriccion diferencial. El modelo es ideal lineal y no calcula saturacion.
+
 ## Elementos multiterminales
 
 Representarlos sólo mediante bloques aprobados y ramas auxiliares documentadas. Relacionar explícitamente ramas de entrada y salida cuando el modelo lo requiera.

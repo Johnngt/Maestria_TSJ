@@ -46,6 +46,17 @@ class Branch:
     line_number: int = 0
 
 
+@dataclass(frozen=True)
+class IdealOpAmp:
+    name: str
+    node_plus: str
+    node_minus: str
+    node_out: str
+    model: str = "IDEAL"
+    source_line: str = ""
+    line_number: int = 0
+
+
 @dataclass
 class Circuit:
     schema_version: str
@@ -53,6 +64,7 @@ class Circuit:
     reference_node: str
     nodes: list[Node] = field(default_factory=list)
     branches: list[Branch] = field(default_factory=list)
+    opamps: list[IdealOpAmp] = field(default_factory=list)
     directives: list[dict[str, Any]] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
 
@@ -70,10 +82,14 @@ def build_circuit(parsed: dict[str, Any]) -> Circuit:
     elements = parsed.get("elements", [])
     if not elements:
         raise CircuitModelError("Parsed data contains no elements")
-    node_ids = sorted(
-        {e["node_from"] for e in elements} | {e["node_to"] for e in elements},
-        key=node_sort_key,
-    )
+    opamp_data = [
+        directive for directive in parsed.get("directives", [])
+        if directive.get("command") == "OPAMP"
+    ]
+    all_node_ids = {e["node_from"] for e in elements} | {e["node_to"] for e in elements}
+    for opamp in opamp_data:
+        all_node_ids.update((opamp["node_plus"], opamp["node_minus"], opamp["node_out"]))
+    node_ids = sorted(all_node_ids, key=node_sort_key)
     if "0" not in node_ids:
         raise CircuitModelError("Reference node 0/GND is required")
     nodes: list[Node] = []
@@ -104,12 +120,25 @@ def build_circuit(parsed: dict[str, Any]) -> Circuit:
                 line_number=int(element.get("line_number", 0)),
             )
         )
+    opamps = [
+        IdealOpAmp(
+            name=item["name"],
+            node_plus=item["node_plus"],
+            node_minus=item["node_minus"],
+            node_out=item["node_out"],
+            model=item["model"],
+            source_line=item["source_line"],
+            line_number=item["line_number"],
+        )
+        for item in opamp_data
+    ]
     return Circuit(
         schema_version="1.0",
         source_name=parsed.get("source_name", "<unknown>"),
         reference_node="0",
         nodes=nodes,
         branches=branches,
+        opamps=opamps,
         directives=parsed.get("directives", []),
         warnings=parsed.get("warnings", []),
     )
@@ -131,6 +160,7 @@ def load_circuit(path: str | Path) -> Circuit:
         reference_node=data["reference_node"],
         nodes=[Node(**item) for item in data["nodes"]],
         branches=[Branch(**item) for item in data["branches"]],
+        opamps=[IdealOpAmp(**item) for item in data.get("opamps", [])],
         directives=data.get("directives", []),
         warnings=data.get("warnings", []),
     )

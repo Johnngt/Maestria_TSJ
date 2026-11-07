@@ -45,6 +45,10 @@ Modelo del circuito, orden de componentes, nodos normalizados y reglas de expans
 
 `topology.json`, tabla de nodos, tabla de ramas, lista de aristas, componentes por rama y `graph.svg` o `graph.png`.
 
+## Bloques multiterminales del proyecto
+
+La directiva `.OPAMP` no se debe representar como una rama dirigida ordinaria. El JSON topologico conserva sus pines en `opamps`; las imagenes pueden anotar los terminales `+`, `-` y `out` sin alterar la conectividad de ramas pasivas ni inventar una orientacion de rama.
+
 ## Tools relacionadas
 
 `build_circuit_model.py`, `build_oriented_graph.py`, NetworkX para visualización y análisis de conectividad.

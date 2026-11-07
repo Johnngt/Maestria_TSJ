@@ -53,10 +53,22 @@ def validate_netlist_text(text: str, source_name: str = "<memory>") -> dict[str,
                     "INVALID_DIRECTIVE",
                     str(error),
                     line_number,
-                    "Corrija la directiva según la gramática documentada (.OP, .AC o .END).",
+                    "Corrija la directiva según la gramática documentada (.OP, .AC, .OPAMP o .END).",
                 )
                 continue
             directives.append(directive)
+            if directive["command"] == "OPAMP":
+                canonical_name = directive["name"].upper()
+                if canonical_name in names:
+                    add(
+                        "error",
+                        "DUPLICATE_COMPONENT",
+                        f"Duplicate component name {directive['name']!r}.",
+                        line_number,
+                        "Use un identificador ?nico para cada componente, incluido cada op-amp.",
+                    )
+                else:
+                    names.add(canonical_name)
             saw_end = directive["command"] == "END"
             continue
 
@@ -122,6 +134,11 @@ def validate_netlist_text(text: str, source_name: str = "<memory>") -> dict[str,
     else:
         nodes = {element["node_from"] for element in elements}
         nodes.update(element["node_to"] for element in elements)
+        for directive in directives:
+            if directive["command"] == "OPAMP":
+                nodes.update(
+                    (directive["node_plus"], directive["node_minus"], directive["node_out"])
+                )
         if "0" not in nodes:
             add(
                 "error",

@@ -1,0 +1,62 @@
+{
+  "schema_version": "1.0",
+  "source_name": "opamp_active_filter.cir",
+  "analysis": "AC",
+  "frequency_hz": 1000.0,
+  "status": "PASS",
+  "checks": [
+    {
+      "name": "linear_residual",
+      "norm": 4.99792506496182e-19,
+      "scale": 96.84017090349982,
+      "threshold": 9.685017090349982e-07,
+      "passed": true
+    },
+    {
+      "name": "full_rank",
+      "rank": 7,
+      "size": 7,
+      "passed": true
+    },
+    {
+      "name": "KCL",
+      "norm": 5.311484201212962e-19,
+      "scale": 0.010654749310535234,
+      "threshold": 2.0654749310535235e-10,
+      "passed": true
+    },
+    {
+      "name": "branch_node_voltage",
+      "norm": 0.0,
+      "scale": 81.6873746564095,
+      "threshold": 8.169737465640951e-07,
+      "passed": true
+    },
+    {
+      "name": "voltage_source_constraints",
+      "norm": 0.0,
+      "scale": 54.36396838377259,
+      "threshold": 5.437396838377259e-07,
+      "passed": true
+    },
+    {
+      "name": "opamp_differential_constraint",
+      "norm": 0.0,
+      "scale": 48.59799014529144,
+      "threshold": 4.860799014529144e-07,
+      "passed": true
+    },
+    {
+      "name": "branch_admittance",
+      "norm": 0.0,
+      "scale": 0.005742976784987164,
+      "threshold": 1.5742976784987164e-10,
+      "passed": true
+    }
+  ],
+  "diagnostics": [],
+  "condition_number": 87792.40231271283,
+  "atol": 1e-10,
+  "rtol": 1e-08,
+  "condition_limit": 1000000000000.0
+}
