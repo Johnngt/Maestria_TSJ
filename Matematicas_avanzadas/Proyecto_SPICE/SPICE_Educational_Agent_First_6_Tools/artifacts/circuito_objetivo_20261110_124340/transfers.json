@@ -1,0 +1,6 @@
+{
+  "Vi_to_Vo": {
+    "numerator": "V(NOUT)",
+    "denominator": "V(NIN)"
+  }
+}

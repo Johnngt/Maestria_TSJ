@@ -1,0 +1,114 @@
+{
+  "schema_version": "1.0",
+  "source_name": "circuito_objetivo.cir",
+  "reference_node": "0",
+  "nodes": [
+    {
+      "id": "0",
+      "is_reference": true
+    },
+    {
+      "id": "IN",
+      "is_reference": false
+    },
+    {
+      "id": "N1",
+      "is_reference": false
+    },
+    {
+      "id": "NM",
+      "is_reference": false
+    },
+    {
+      "id": "NP",
+      "is_reference": false
+    },
+    {
+      "id": "OUT",
+      "is_reference": false
+    }
+  ],
+  "edges": [
+    {
+      "node_from": "IN",
+      "node_to": "0",
+      "key": "B1",
+      "branch_id": "B1",
+      "component": "V1",
+      "element_type": "V",
+      "value_si": 0.001,
+      "unit": "volt"
+    },
+    {
+      "node_from": "IN",
+      "node_to": "N1",
+      "key": "B2",
+      "branch_id": "B2",
+      "component": "C1",
+      "element_type": "C",
+      "value_si": 1e-07,
+      "unit": "farad"
+    },
+    {
+      "node_from": "N1",
+      "node_to": "NP",
+      "key": "B3",
+      "branch_id": "B3",
+      "component": "C2",
+      "element_type": "C",
+      "value_si": 1e-07,
+      "unit": "farad"
+    },
+    {
+      "node_from": "N1",
+      "node_to": "OUT",
+      "key": "B4",
+      "branch_id": "B4",
+      "component": "G1",
+      "element_type": "G",
+      "value_si": 0.00078740157480315,
+      "unit": "siemens"
+    },
+    {
+      "node_from": "NM",
+      "node_to": "0",
+      "key": "B7",
+      "branch_id": "B7",
+      "component": "RA",
+      "element_type": "R",
+      "value_si": 1270.0,
+      "unit": "ohm"
+    },
+    {
+      "node_from": "NP",
+      "node_to": "0",
+      "key": "B5",
+      "branch_id": "B5",
+      "component": "G2",
+      "element_type": "G",
+      "value_si": 0.000434782608695652,
+      "unit": "siemens"
+    },
+    {
+      "node_from": "OUT",
+      "node_to": "NM",
+      "key": "B6",
+      "branch_id": "B6",
+      "component": "RB",
+      "element_type": "R",
+      "value_si": 2300.0,
+      "unit": "ohm"
+    }
+  ],
+  "opamps": [
+    {
+      "name": "U1",
+      "node_plus": "NP",
+      "node_minus": "NM",
+      "node_out": "OUT",
+      "model": "IDEAL",
+      "line_number": 9
+    }
+  ],
+  "is_connected": true
+}

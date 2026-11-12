@@ -1,0 +1,48 @@
+{
+  "schema_version": "1.0",
+  "source_name": "circuito_objetivo_tableau_parcial_sin_U1.cir",
+  "analysis": "AC",
+  "frequency_hz": 10.0,
+  "status": "PASS",
+  "checks": [
+    {
+      "name": "linear_residual",
+      "norm": 5.441270265345432e-22,
+      "scale": 4.551677118628114,
+      "threshold": 4.561677118628114e-08,
+      "passed": true
+    },
+    {
+      "name": "full_rank",
+      "rank": 19,
+      "size": 19,
+      "passed": true
+    },
+    {
+      "name": "KCL",
+      "norm": 2.4757163619039326e-24,
+      "scale": 4.65164250927457e-08,
+      "threshold": 1.0000046516425093e-10,
+      "passed": true
+    },
+    {
+      "name": "branch_node_voltage",
+      "norm": 0.0,
+      "scale": 0.0028273619219914845,
+      "threshold": 1.2827361921991485e-10,
+      "passed": true
+    },
+    {
+      "name": "constitutive_residual",
+      "norm": 1.0587912156223112e-22,
+      "scale": 0.0034854165971627137,
+      "threshold": 1.3485416597162713e-10,
+      "passed": true
+    }
+  ],
+  "diagnostics": [],
+  "condition_number": 44856371.03193822,
+  "atol": 1e-10,
+  "rtol": 1e-08,
+  "condition_limit": 1000000000000.0
+}
