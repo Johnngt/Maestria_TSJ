@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0",
+  "source_name": "filtro_activo.cir",
+  "analysis": "AC",
+  "formulation": "MNA",
+  "status": "PASS",
+  "points": [
+    {
+      "frequency_hz": 10.0,
+      "status": "PASS",
+      "variables": {
+        "V(NOUT)": {
+          "real": -0.06512946360453983,
+          "imag": 0.010789959514956345,
+          "unit": "volt"
+        }
+      }
+    },
+    {
+      "frequency_hz": 100000.0,
+      "status": "PASS",
+      "variables": {
+        "V(NOUT)": {
+          "real": 14.999826911176186,
+          "imag": 0.05570371271832133,
+          "unit": "volt"
+        }
+      }
+    }
+  ]
+}

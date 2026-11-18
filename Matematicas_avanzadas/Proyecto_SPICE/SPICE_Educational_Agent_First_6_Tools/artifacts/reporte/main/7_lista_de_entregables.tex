@@ -1,0 +1,91 @@
+% 7_lista_de_entregables.tex
+\section{Entregables del Proyecto}
+
+Como parte de las evidencias del proyecto se presentan los siguientes entregables:
+
+\subsection{Repositorio}
+
+Repositorio Git: $https://github.com/Johnngt/Maestria_TSJ/tree/main/Matematicas\_avanzadas/$
+$Proyecto\_SPICE$
+
+\subsection{Herramientas de análisis}
+ Script Desarrollados: $https://github.com/Johnngt/Maestria\_TSJ/tree/main/Matematicas\_avanzadas/$
+ $Proyecto\_SPICE/SPICE\_Educational\_Agent\_First\_6\_Tools$
+ 
+ \small
+\begin{longtable}{>{\centering\arraybackslash}p{0.6cm} >{\raggedright\arraybackslash}p{4.7cm} >{\raggedright\arraybackslash}p{10.5cm}}
+\toprule
+\# & Script & Responsabilidad \\
+\midrule
+\endfirsthead
+\toprule
+\# & Script & Responsabilidad \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+1 & \texttt{validate\_netlist.py} & Comprueba sintaxis, componentes y directivas admitidos. Emite diagnósticos y estado \texttt{PASS} o \texttt{FAIL}; debe ejecutarse antes de construir el circuito. \\
+2 & \texttt{parse\_netlist.py} & Interpreta el netlist validado y genera su representación estructurada. También ejecuta la validación del netlist. \\
+3 & \texttt{build\_circuit\_model.py} & Construye el modelo normalizado del circuito, con nodos, ramas, componentes y directivas. \\
+4 & \texttt{build\_oriented\_graph.py} & Construye el grafo orientado del circuito y exporta la topología; opcionalmente genera una imagen. \\
+5 & \texttt{build\_incidence\_matrix.py} & Genera las matrices de incidencia completa y reducida, conservando el orden de nodos y ramas. \\
+6 & \texttt{stamp\_elements.py} & Módulo compartido con los modelos y sellos de los componentes para las formulaciones nodal y Tableau. No es un comando CLI independiente. \\
+7 & \url{build_constitutive_matrices.py} & Construye las matrices constitutivas $Y$, $Z$ y el vector $W$ requeridos por Tableau, incluso para una frecuencia AC especificada. \\
+8 & \texttt{build\_nodal\_system.py} & Ensambla el sistema nodal clásico para circuitos compatibles. Rechaza fuentes ideales de voltaje y op-amps ideales. \\
+9 & \texttt{build\_tableau\_system.py} & Ensambla el sistema Tableau con ecuaciones KCL, KVL y constitutivas. \\
+10 & \texttt{build\_mna\_system.py} & Ensambla MNA para la extensión de op-amp ideal del proyecto, incluyendo la restricción entre entradas y la corriente auxiliar de salida. \\
+11 & \texttt{solve\_linear\_system.py} & Resuelve sistemas nodales, Tableau o MNA y recupera las variables eléctricas calculadas. \\
+12 & \texttt{solve\_ac\_sweep.py} & Ejecuta análisis AC de punto o barrido LIN/DEC; obtiene transferencias complejas, magnitud, decibeles, fase y estado por punto. \\
+13 & \texttt{validate\_solution.py} & Valida residuos y consistencia matemática y eléctrica de una solución, incluyendo las ecuaciones correspondientes a la formulación. \\
+14 & \texttt{compare\_reference.py} & Compara resultados complejos con un archivo de referencia compatible proporcionado por el usuario. No ejecuta HSPICE. \\
+15 & \texttt{generate\_report.py} & Genera un reporte Markdown a partir de un bundle de artefactos calculados y validados. \\
+16 & \texttt{plot\_results.py} & Produce imágenes de topología y, con resultados AC, gráficas de magnitud en dB y fase. \\
+\end{longtable}
+\normalsize
+
+\subsubsection{Scripts de prueba}
+\begin{itemize}[leftmargin=*]
+  \item \texttt{test\_integration.py}: prueba de integración básica del flujo original de herramientas.
+  \item \texttt{test\_extended\_tools.py}: pruebas de regresión para modelos constitutivos, Tableau, análisis AC y reporte.
+\end{itemize}
+
+\subsubsection{Flujo general de análisis}
+\begin{enumerate}[leftmargin=*]
+  \item Validar y parsear el netlist.
+  \item Construir el modelo del circuito, su grafo orientado y la matriz de incidencia.
+  \item Elegir la formulación compatible: nodal, Tableau o MNA. Para la extensión de op-amp ideal se utiliza exclusivamente MNA.
+  \item Ensamblar y resolver el sistema; para AC, procesar cada frecuencia del barrido.
+  \item Validar la solución y conservar estados y diagnósticos.
+  \item Si existe una referencia externa compatible, compararla cuantitativamente; después generar los reportes y gráficas disponibles.
+\end{enumerate}
+
+\subsection{Demo del agente y Netlist final}
+Para este reporte se realizó el analisis de 3 circuitos, cuyos archivos generados por el análisis se encuentran en el siguiente path del repositorio:
+
+\begin{enumerate}
+\item Caso 1: Circuito Objetivo:
+
+$/SPICE\_Educational\_Agent\_First\_6\_Tools/artifacts/$ ...
+
+$filtro\_activo\_20261116\_1533\_circuito\_objetivo$
+
+\item Caso 2: Circuito Objetivo Modificado:
+
+$/SPICE\_Educational\_Agent\_First\_6\_Tools/artifacts/$ ...
+
+$filtro\_activo\_20261116\_1710\_circuito\_objetivo\_modificado$
+
+\item Caso 3: Circuito Diferente:
+
+$/SPICE\_Educational\_Agent\_First\_6\_Tools/artifacts/$ ...
+
+$filtro\_pasa\_altas\_RLC\_circuito\_dif$
+
+\end{enumerate}
+
+Todos los análisis que se ejecutaron poseen un archivo llamado: \textit{reporte\_ac.md} 
+Donde se puede encontrar el netlist que consume el Agente para realizar el analisis, también se encuentra la generación de las diferentes matrices que sostienen el análisis de circuitos como: \textit{Matriz de incidencia}, \textit{Ecuaciones constitutivas}, \textit{Matriz X}, \textit{Matriz Y}, \textit{Vector W}, \textit{Sistema Ensamblado} y \textit{Resultados AC}.
+
+\subsection{Comparación SPICE}
+
+En la sección 4, 5 y 6 se hace la comparación de resultados obtenidos por parte del Agente SPICE y los resultados obtenidos por la simulación del Programa HSPICE.

@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0",
+  "source_name": "filtro_pasa_altas_rlc.cir",
+  "analysis": "AC",
+  "formulation": "TABLEAU",
+  "status": "PASS",
+  "points": [
+    {
+      "frequency_hz": 10.0,
+      "status": "PASS",
+      "variables": {
+        "V(OUT)/V(IN)": {
+          "real": 0.003932626873479219,
+          "imag": 0.06258722968268533,
+          "unit": "ratio"
+        }
+      }
+    },
+    {
+      "frequency_hz": 100000.0,
+      "status": "PASS",
+      "variables": {
+        "V(OUT)/V(IN)": {
+          "real": 0.024716733787534008,
+          "imag": -0.1552604806717092,
+          "unit": "ratio"
+        }
+      }
+    }
+  ]
+}

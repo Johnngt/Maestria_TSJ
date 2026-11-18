@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "source_name": "3_circuito_dif_HSPICE.lis",
+  "analysis": "AC",
+  "reference_info": {
+    "source": "HSPICE V-2023.12-SP2-1; .lis output voltage with 1 V AC input, equal to V(OUT)/V(IN)",
+    "frequency_count_total_parsed": 401,
+    "matching_frequencies_hz": [
+      10.0,
+      100000.0
+    ]
+  },
+  "points": [
+    {
+      "frequency_hz": 10.0,
+      "variables": {
+        "V(OUT)/V(IN)": {
+          "real": 0.003932612617586962,
+          "imag": 0.06258727069053256,
+          "unit": "ratio"
+        }
+      }
+    },
+    {
+      "frequency_hz": 100000.0,
+      "variables": {
+        "V(OUT)/V(IN)": {
+          "real": 0.024716700265237892,
+          "imag": -0.15526052174122817,
+          "unit": "ratio"
+        }
+      }
+    }
+  ]
+}

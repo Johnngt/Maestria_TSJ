@@ -1,0 +1,67 @@
+{
+  "schema_version": "1.0",
+  "source_name": "filtro_pasa_altas_rlc.cir",
+  "analysis": "AC",
+  "reference_info": {
+    "source": "HSPICE V-2023.12-SP2-1; .lis output voltage with 1 V AC input, equal to V(OUT)/V(IN)",
+    "frequency_count_total_parsed": 401,
+    "matching_frequencies_hz": [
+      10.0,
+      100000.0
+    ]
+  },
+  "status": "PASS",
+  "atol": 1e-06,
+  "rtol": 2e-05,
+  "frequency_atol": 1e-09,
+  "frequency_rtol": 1e-08,
+  "comparisons": [
+    {
+      "point": 0,
+      "frequency_hz": 10.0,
+      "status": "PASS",
+      "checks": [
+        {
+          "label": "V(OUT)/V(IN)",
+          "unit": "ratio",
+          "actual": {
+            "real": 0.003932626873479219,
+            "imag": 0.06258722968268533
+          },
+          "reference": {
+            "real": 0.003932612617586962,
+            "imag": 0.06258727069053256
+          },
+          "absolute_error": 4.341513559137553e-08,
+          "relative_error": 6.923082598563805e-07,
+          "threshold": 2.2542140000000003e-06,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "point": 1,
+      "frequency_hz": 100000.0,
+      "status": "PASS",
+      "checks": [
+        {
+          "label": "V(OUT)/V(IN)",
+          "unit": "ratio",
+          "actual": {
+            "real": 0.024716733787534008,
+            "imag": -0.1552604806717092
+          },
+          "reference": {
+            "real": 0.024716700265237892,
+            "imag": -0.15526052174122817
+          },
+          "absolute_error": 5.301367489759787e-08,
+          "relative_error": 3.372036547110966e-07,
+          "threshold": 4.144312e-06,
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "diagnostics": []
+}

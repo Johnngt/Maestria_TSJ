@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0",
+  "source_name": "circuito_objectivo_hspice_v2023.lis",
+  "analysis": "AC",
+  "reference_info": {
+    "source": "HSPICE V-2023.12-SP2-1 .lis",
+    "frequency_count_total_parsed": 401
+  },
+  "points": [
+    {
+      "frequency_hz": 10.0,
+      "variables": {
+        "Vi_to_Vo": {
+          "real": -0.00032416089119679316,
+          "imag": -3.310986460378565e-06,
+          "unit": "ratio"
+        }
+      }
+    },
+    {
+      "frequency_hz": 100000.0,
+      "variables": {
+        "Vi_to_Vo": {
+          "real": 2.811089748437417,
+          "imag": -0.02489711288602807,
+          "unit": "ratio"
+        }
+      }
+    }
+  ]
+}

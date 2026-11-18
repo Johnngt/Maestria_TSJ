@@ -1,0 +1,63 @@
+{
+  "schema_version": "1.0",
+  "source_name": "filtro_activo.cir",
+  "analysis": "AC",
+  "reference_info": {
+    "source": "HSPICE V-2023.12-SP2-1 .lis",
+    "frequency_count_total_parsed": 401
+  },
+  "status": "PASS",
+  "atol": 1e-06,
+  "rtol": 2e-05,
+  "frequency_atol": 1e-09,
+  "frequency_rtol": 1e-08,
+  "comparisons": [
+    {
+      "point": 0,
+      "frequency_hz": 10.0,
+      "status": "PASS",
+      "checks": [
+        {
+          "label": "Vi_to_Vo",
+          "unit": "ratio",
+          "actual": {
+            "real": -0.00032416085637077024,
+            "imag": -3.3108429183652717e-06
+          },
+          "reference": {
+            "real": -0.00032416089119679316,
+            "imag": -3.310986460378565e-06
+          },
+          "absolute_error": 1.4770633518255807e-10,
+          "relative_error": 4.556337145312174e-07,
+          "threshold": 1.0064835559999999e-06,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "point": 1,
+      "frequency_hz": 100000.0,
+      "status": "PASS",
+      "checks": [
+        {
+          "label": "Vi_to_Vo",
+          "unit": "ratio",
+          "actual": {
+            "real": 2.8110469051257048,
+            "imag": -0.024896734183158922
+          },
+          "reference": {
+            "real": 2.811089748437417,
+            "imag": -0.02489711288602807
+          },
+          "absolute_error": 4.284498540464878e-05,
+          "relative_error": 1.5240817232729361e-05,
+          "threshold": 5.7224e-05,
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "diagnostics": []
+}

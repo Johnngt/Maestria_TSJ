@@ -1,0 +1,18 @@
+* "simulator" "HSPICE" 
+* "version" "P-2019.06-SP1-1 win64"
+* "format" "HSP"
+* "rundate" "18:34:31 11/13/2026 "
+* "netlist" "circuito_objetivo_hspice.sp "
+* "runtitle" "* hspice conversion of the educational active-filter netlist"
+* time =    0.            
+* temperature =   25.0000        
+*** BEGIN: Saved Operating Point ***                     
+.option 
++ gmindc=   1.0000p       
+.nodeset
++ in =   0.            
++ n1 =   0.            
++ nm =   0.            
++ np =   0.            
++ out =   0.            
+***   END: Saved Operating Point ***                     

@@ -1,0 +1,544 @@
+{
+  "schema_version": "1.0",
+  "source_name": "filtro_activo.cir",
+  "analysis": "AC",
+  "frequency_hz": 10.0,
+  "formulation": "MNA",
+  "M": [
+    [
+      {
+        "real": 0.0,
+        "imag": 3.141592653589793e-05
+      },
+      {
+        "real": 0.0,
+        "imag": -3.141592653589793e-05
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": 1.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      }
+    ],
+    [
+      {
+        "real": 0.0,
+        "imag": -3.141592653589793e-05
+      },
+      {
+        "real": 0.0003333333333333333,
+        "imag": 6.283185307179586e-05
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": -3.141592653589793e-05
+      },
+      {
+        "real": -0.0003333333333333333,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      }
+    ],
+    [
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.001,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": -0.0006666666666666666,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      }
+    ],
+    [
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": -3.141592653589793e-05
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0006666666666666666,
+        "imag": 3.141592653589793e-05
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      }
+    ],
+    [
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": -0.0003333333333333333,
+        "imag": 0.0
+      },
+      {
+        "real": -0.0006666666666666666,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.001,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": 1.0,
+        "imag": 0.0
+      }
+    ],
+    [
+      {
+        "real": 1.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      }
+    ],
+    [
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": -1.0,
+        "imag": 0.0
+      },
+      {
+        "real": 1.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      }
+    ]
+  ],
+  "rhs": [
+    {
+      "real": -0.0,
+      "imag": -0.0
+    },
+    {
+      "real": -0.0,
+      "imag": -0.0
+    },
+    {
+      "real": -0.0,
+      "imag": -0.0
+    },
+    {
+      "real": -0.0,
+      "imag": -0.0
+    },
+    {
+      "real": -0.0,
+      "imag": -0.0
+    },
+    {
+      "real": 10.0,
+      "imag": 0.0
+    },
+    {
+      "real": 0.0,
+      "imag": 0.0
+    }
+  ],
+  "unknown_order": [
+    "V(NIN)",
+    "V(NN1)",
+    "V(NNM)",
+    "V(NNP)",
+    "V(NOUT)",
+    "I(V1)",
+    "I(U1)"
+  ],
+  "equation_order": [
+    "KCL(NIN)",
+    "KCL(NN1)",
+    "KCL(NNM)",
+    "KCL(NNP)",
+    "KCL(NOUT)",
+    "VSOURCE(V1)",
+    "OPAMP_DIFF(U1)"
+  ],
+  "branch_order": [
+    "B1",
+    "B2",
+    "B3",
+    "B4",
+    "B5",
+    "B6",
+    "B7"
+  ],
+  "component_order": [
+    "V1",
+    "C1",
+    "C2",
+    "RG1",
+    "RG2",
+    "RB",
+    "RA"
+  ],
+  "node_order": [
+    "IN",
+    "N1",
+    "NM",
+    "NP",
+    "OUT"
+  ],
+  "unknown_blocks": {
+    "Vn": [
+      0,
+      5
+    ],
+    "I_voltage_sources": [
+      5,
+      6
+    ],
+    "I_opamps": [
+      6,
+      7
+    ]
+  },
+  "equation_blocks": {
+    "KCL": [
+      0,
+      5
+    ],
+    "voltage_sources": [
+      5,
+      6
+    ],
+    "opamp_differential": [
+      6,
+      7
+    ]
+  },
+  "A_reduced": [
+    [
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      -1,
+      1,
+      1,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      -1,
+      1
+    ],
+    [
+      0,
+      0,
+      -1,
+      0,
+      1,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      -1,
+      0,
+      1,
+      0
+    ]
+  ],
+  "branch_admittances": [
+    {
+      "real": 0.0,
+      "imag": 0.0
+    },
+    {
+      "real": -0.0,
+      "imag": 3.141592653589793e-05
+    },
+    {
+      "real": -0.0,
+      "imag": 3.141592653589793e-05
+    },
+    {
+      "real": 0.0003333333333333333,
+      "imag": 0.0
+    },
+    {
+      "real": 0.0006666666666666666,
+      "imag": 0.0
+    },
+    {
+      "real": 0.0006666666666666666,
+      "imag": 0.0
+    },
+    {
+      "real": 0.0003333333333333333,
+      "imag": 0.0
+    }
+  ],
+  "current_sources": [
+    {
+      "real": 0.0,
+      "imag": 0.0
+    },
+    {
+      "real": 0.0,
+      "imag": 0.0
+    },
+    {
+      "real": 0.0,
+      "imag": 0.0
+    },
+    {
+      "real": 0.0,
+      "imag": 0.0
+    },
+    {
+      "real": 0.0,
+      "imag": 0.0
+    },
+    {
+      "real": 0.0,
+      "imag": 0.0
+    },
+    {
+      "real": 0.0,
+      "imag": 0.0
+    }
+  ],
+  "voltage_source_incidence": [
+    [
+      {
+        "real": 1.0,
+        "imag": 0.0
+      }
+    ],
+    [
+      {
+        "real": 0.0,
+        "imag": 0.0
+      }
+    ],
+    [
+      {
+        "real": 0.0,
+        "imag": 0.0
+      }
+    ],
+    [
+      {
+        "real": 0.0,
+        "imag": 0.0
+      }
+    ],
+    [
+      {
+        "real": 0.0,
+        "imag": 0.0
+      }
+    ]
+  ],
+  "voltage_source_values": [
+    {
+      "real": 10.0,
+      "imag": 0.0
+    }
+  ],
+  "voltage_source_branch_indices": [
+    0
+  ],
+  "voltage_source_labels": [
+    "V1"
+  ],
+  "opamp_output_incidence": [
+    [
+      {
+        "real": 0.0,
+        "imag": 0.0
+      }
+    ],
+    [
+      {
+        "real": 0.0,
+        "imag": 0.0
+      }
+    ],
+    [
+      {
+        "real": 0.0,
+        "imag": 0.0
+      }
+    ],
+    [
+      {
+        "real": 0.0,
+        "imag": 0.0
+      }
+    ],
+    [
+      {
+        "real": 1.0,
+        "imag": 0.0
+      }
+    ]
+  ],
+  "opamp_differential_matrix": [
+    [
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      },
+      {
+        "real": -1.0,
+        "imag": 0.0
+      },
+      {
+        "real": 1.0,
+        "imag": 0.0
+      },
+      {
+        "real": 0.0,
+        "imag": 0.0
+      }
+    ]
+  ],
+  "opamp_names": [
+    "U1"
+  ],
+  "opamp_terminals": [
+    {
+      "name": "U1",
+      "node_plus": "NP",
+      "node_minus": "NM",
+      "node_out": "OUT",
+      "line_number": 9
+    }
+  ],
+  "shape": [
+    7,
+    7
+  ],
+  "convention": "X=[Vn; I_voltage_sources; I_opamps], KCL uses outgoing currents"
+}

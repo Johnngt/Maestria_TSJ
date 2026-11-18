@@ -1,0 +1,48 @@
+{
+  "schema_version": "1.0",
+  "source_name": "filtro_pasa_altas_rlc.cir",
+  "analysis": "AC",
+  "frequency_hz": 10.0,
+  "status": "PASS",
+  "checks": [
+    {
+      "name": "linear_residual",
+      "norm": 4.198997707499607e-18,
+      "scale": 1735.3601903683732,
+      "threshold": 1.7353701903683733e-05,
+      "passed": true
+    },
+    {
+      "name": "full_rank",
+      "rank": 11,
+      "size": 11,
+      "passed": true
+    },
+    {
+      "name": "KCL",
+      "norm": 1.3657995884130278e-20,
+      "scale": 0.0003072182367039776,
+      "threshold": 1.0307218236703978e-10,
+      "passed": true
+    },
+    {
+      "name": "branch_node_voltage",
+      "norm": 0.0,
+      "scale": 2.8284827399420127,
+      "threshold": 2.838482739942013e-08,
+      "passed": true
+    },
+    {
+      "name": "constitutive_residual",
+      "norm": 3.5090695299766785e-18,
+      "scale": 3.574959315968855,
+      "threshold": 3.5849593159688553e-08,
+      "passed": true
+    }
+  ],
+  "diagnostics": [],
+  "condition_number": 3457402.8869657093,
+  "atol": 1e-10,
+  "rtol": 1e-08,
+  "condition_limit": 1000000000000.0
+}

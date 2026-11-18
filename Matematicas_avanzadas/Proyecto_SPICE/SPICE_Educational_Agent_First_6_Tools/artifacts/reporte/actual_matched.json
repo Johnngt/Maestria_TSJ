@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0",
+  "source_name": "filtro_activo.cir",
+  "analysis": "AC",
+  "formulation": "MNA",
+  "status": "PASS",
+  "points": [
+    {
+      "frequency_hz": 10.0,
+      "status": "PASS",
+      "transfer_functions": {
+        "Vi_to_Vo": {
+          "numerator": "V(NOUT)",
+          "denominator": "V(NIN)",
+          "real": -0.00032416085637077024,
+          "imag": -3.3108429183652717e-06,
+          "magnitude": 0.00032417776370976035,
+          "phase_deg": -179.4148253056923,
+          "magnitude_db": -69.78433555960484,
+          "status": "PASS"
+        }
+      }
+    },
+    {
+      "frequency_hz": 100000.0,
+      "status": "PASS",
+      "transfer_functions": {
+        "Vi_to_Vo": {
+          "numerator": "V(NOUT)",
+          "denominator": "V(NIN)",
+          "real": 2.8110469051257048,
+          "imag": -0.024896734183158922,
+          "magnitude": 2.8111571550146017,
+          "phase_deg": -0.5074410152761313,
+          "magnitude_db": 8.977702501959136,
+          "status": "PASS"
+        }
+      }
+    }
+  ]
+}

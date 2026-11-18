@@ -1,0 +1,19 @@
+\section{Resumen de la bitacora del proyecto}
+La siguiente sintesis recoge los hitos y estados consignados en \textit{Bitacora de trabajo -- Proyecto SPICE}. Se resumen evidencias del desarrollo del Agente tipo SPICE.
+
+\begin{table}[H]
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{p{1.7cm} p{2.8cm} X}
+\toprule
+Fecha & Etapa & Trabajo y evidencia registrada \\
+\midrule
+2026-10-10 & Revision y arquitectura & Auditoria de los diez skills, las seis herramientas iniciales, interfaces, convenciones y pruebas. Se identificaron brechas de validacion, compatibilidad AC/DC y orden determinista; se planifico el desarrollo de herramientas restantes. \\
+2026-10-10 & Herramientas y flujo & Desarrollo e integracion de herramientas para modelos constitutivos, Tableau, solver, barrido AC, validacion, comparacion, reportes y graficas. La bitacora registra pruebas de flujos nodal DC, Tableau y AC, junto con correcciones de contratos y datos. \\
+2026-11-02 & Reporte y analisis AC & Se documento el ejemplo RC con bundle, reporte Markdown y graficas. Barrido DEC de 41 puntos: \textbf{Satisfactorio}; las pruebas extendidas y la integracion DC tambien se reportaron aprobadas. \\
+2026-11-02 & Validacion y stamps & Se implementaron \texttt{validate\_netlist.py} y \texttt{stamp\_elements.py}, integrando validacion como puerta previa y compartiendo modelos de rama. Verificacion registrada: 10/10 pruebas extendidas, integracion DC y flujo AC RC en \textbf{Satisfactorio}. \\
+2026-11-02 & Extension MNA para op-amp & Se implemento la directiva educativa \texttt{.OPAMP ... IDEAL} con corriente auxiliar de salida y restriccion de entradas iguales en operacion lineal. Demostracion AC: 61/61 puntos \textbf{Satisfactorio}; pruebas extendidas 15/15 e integracion DC \textbf{Satisfactorio}. No se reporto comparacion SPICE externa para esa demostracion; el modelo no incluye rieles ni saturacion. \\
+\bottomrule
+\end{tabularx}
+\caption{Hitos resumidos de la bitacora y evidencias/limitaciones reportadas.}
+\end{table}

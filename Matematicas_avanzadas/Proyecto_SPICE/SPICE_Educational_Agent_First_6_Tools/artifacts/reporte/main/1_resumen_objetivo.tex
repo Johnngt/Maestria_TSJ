@@ -1,0 +1,20 @@
+\section*{Resumen ejecutivo}
+El presente reporte documenta la comparación entre el análisis AC realizado con las herramientas del agente SPICE educativo y la referencia generada con HSPICE. El análisis se realizará en tres circuitos: 
+\begin{enumerate}
+	\item Circuito objetivo 
+	\item Circuito objetivo con valores diferentes 
+	\item Circuito diferente
+\end{enumerate}
+
+Para el análisis de los amplificadores operacionales el agente usa un model de analisis nodal modificado (MNA - Modified Nodal Analisys)Se hace un barrido en frecuencia por parte del agente y se compara con la referencia HSPICE.
+
+\section{Objetivo y alcance}
+El objetivo de esta práctica es evaluar los resultados de un agente SPICE creado en clase con respecto a los resultados del programa HSPICE para el analisis de circuitos no tan complejos. Teniendo en cuenta que los elementos representan comportamientos ideales del analisis de circuitos. El analisis de AC contempla un barrido en frecuencia.
+Los entregables por parte del agente son los siguientes:
+
+\begin{enumerate}
+	\item Validación: análisis MNA(para el caso de los OpAmps), barrido LIN de 300 puntos entre 10 Hz y 100 kHz. Función de transferencia: $H(w)= \frac{VOUT}{VIN}$.
+	\item Gráficas: magnitud en dB, magnitud de V(N\_OUT) en voltios y fase.
+	\item Esquema y matrices: esquemático, grafo con la restricción ideal visible, matriz de Tableau incluyendo las matrices Y/Z/W .El Tableau es parcial cuando se incluye op-amp ideal, dado que el analisis se resuelve con MNA.
+	\item Reporte: reporte\_ac.md incluye las tres gráficas y los valores por frecuencia para los 300 puntos.
+\end{enumerate}

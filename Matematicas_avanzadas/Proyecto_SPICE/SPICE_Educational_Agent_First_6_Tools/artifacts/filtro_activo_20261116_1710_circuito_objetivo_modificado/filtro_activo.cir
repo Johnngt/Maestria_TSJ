@@ -1,0 +1,11 @@
+* Filtro activo; valores modificados segun solicitud del usuario
+V1 IN 0 AC 10 0
+C1 IN N1 0.50u
+C2 N1 NP 0.50u
+RG1 N1 OUT 3k
+RG2 NP 0 1.5k
+RB OUT NM 1.5k
+RA NM 0 3k
+.OPAMP U1 NP NM OUT IDEAL
+.AC LIN 300 10 100k
+.END

@@ -1,0 +1,67 @@
+{
+  "schema_version": "1.0",
+  "source_name": "filtro_activo.cir",
+  "analysis": "AC",
+  "reference_info": {
+    "source": "HSPICE V-2023.12-SP2-1; .lis output voltage; EOP finite-gain VCVS, gain=1e9",
+    "frequency_count_total_parsed": 401,
+    "matching_frequencies_hz": [
+      10.0,
+      100000.0
+    ]
+  },
+  "status": "PASS",
+  "atol": 1e-06,
+  "rtol": 2e-05,
+  "frequency_atol": 1e-09,
+  "frequency_rtol": 1e-08,
+  "comparisons": [
+    {
+      "point": 0,
+      "frequency_hz": 10.0,
+      "status": "PASS",
+      "checks": [
+        {
+          "label": "V(NOUT)",
+          "unit": "volt",
+          "actual": {
+            "real": -0.06512946360453983,
+            "imag": 0.010789959514956345
+          },
+          "reference": {
+            "real": -0.06512947040881774,
+            "imag": 0.010789938837033965
+          },
+          "absolute_error": 2.1768662608073458e-08,
+          "relative_error": 3.2974228849562627e-07,
+          "threshold": 2.320344e-06,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "point": 1,
+      "frequency_hz": 100000.0,
+      "status": "PASS",
+      "checks": [
+        {
+          "label": "V(NOUT)",
+          "unit": "volt",
+          "actual": {
+            "real": 14.999826911176186,
+            "imag": 0.05570371271832133
+          },
+          "reference": {
+            "real": 14.999796569238933,
+            "imag": 0.05570360354510307
+          },
+          "absolute_error": 3.0342133659738742e-05,
+          "relative_error": 2.0228223961318905e-06,
+          "threshold": 0.0003009980000000001,
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "diagnostics": []
+}

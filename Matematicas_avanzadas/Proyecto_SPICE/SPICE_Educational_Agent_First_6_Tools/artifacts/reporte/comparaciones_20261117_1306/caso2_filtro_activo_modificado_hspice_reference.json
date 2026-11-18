@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "source_name": "2_circuito__objectivo_modificado_HSPICE.lis",
+  "analysis": "AC",
+  "reference_info": {
+    "source": "HSPICE V-2023.12-SP2-1; .lis output voltage; EOP finite-gain VCVS, gain=1e9",
+    "frequency_count_total_parsed": 401,
+    "matching_frequencies_hz": [
+      10.0,
+      100000.0
+    ]
+  },
+  "points": [
+    {
+      "frequency_hz": 10.0,
+      "variables": {
+        "V(NOUT)": {
+          "real": -0.06512947040881774,
+          "imag": 0.010789938837033965,
+          "unit": "volt"
+        }
+      }
+    },
+    {
+      "frequency_hz": 100000.0,
+      "variables": {
+        "V(NOUT)": {
+          "real": 14.999796569238933,
+          "imag": 0.05570360354510307,
+          "unit": "volt"
+        }
+      }
+    }
+  ]
+}
